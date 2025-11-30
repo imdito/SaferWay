@@ -11,19 +11,27 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 let crimeData = [];
+let crimeLayer = null; // Layer untuk crime data
 let routingControl = null;
 let startPoint = null;
 let endPoint = null;
 let currentMode = 'fastest';
 
-// --- LOAD DATA ---
-async function loadCrimeData() {
+// --- LOAD DATA dengan Filter ---
+async function loadCrimeData(filterLevel = 'all') {
     try {
-        const response = await fetch(API_URL);
+        const url = filterLevel === 'all' ? API_URL : `${API_URL}?level=${filterLevel}`;
+        const response = await fetch(url);
         const data = await response.json();
         crimeData = data.features;
 
-        L.geoJSON(data, {
+        // Hapus layer crime yang lama jika ada
+        if (crimeLayer) {
+            map.removeLayer(crimeLayer);
+        }
+
+        // Buat layer baru
+        crimeLayer = L.geoJSON(data, {
             pointToLayer: function (feature, latlng) {
                 const props = feature.properties;
                 // Ukuran marker: Single=Kecil, Cluster=Sedikit Besar
@@ -43,7 +51,6 @@ async function loadCrimeData() {
                 const reports = props.reports;
 
                 // HEADER POPUP (Menampilkan Status Terburuk)
-                // Kita warnain background statusnya sesuai warna bahaya
                 let html = `
                     <div class="w-[260px] font-sans">
                         <div class="flex justify-between items-center mb-2 pb-2 border-b border-gray-100">
@@ -87,12 +94,10 @@ async function loadCrimeData() {
                 layer.bindPopup(html, { maxWidth: 300 });
             }
         }).addTo(map);
-    } catch (e) { console.error("Gagal load data:", e); }
+    } catch (e) { 
+        console.error("Gagal load data:", e); 
+    }
 }
-
-// ... (SISA KODE GPS, KLIK KANAN, & ROUTING TETAP SAMA SEPERTI YANG SEBELUMNYA) ...
-// Copy paste aja fungsi useCurrentLocation, calculateRoute, analyzeSafety dari chat sebelumnya.
-// Logic routingnya ga berubah kok.
 
 // --- FITUR GPS ---
 function useCurrentLocation() {
@@ -113,7 +118,10 @@ map.on('locationfound', (e) => {
     if (endPoint) calculateRoute();
 });
 
-map.on('locationerror', () => { alert("Gagal ambil lokasi GPS."); document.getElementById('start-input').value = ""; });
+map.on('locationerror', () => { 
+    alert("Gagal ambil lokasi GPS."); 
+    document.getElementById('start-input').value = ""; 
+});
 
 // --- KLIK KANAN ---
 map.on('contextmenu', (e) => {
@@ -211,4 +219,11 @@ function analyzeSafety(coords) {
     }
 }
 
-loadCrimeData();
+// --- FUNGSI FILTER DATA KEJAHATAN ---
+function filterCrimeData(level) {
+    console.log('Menerapkan filter:', level);
+    loadCrimeData(level);
+}
+
+// Load data pertama kali dengan filter 'all'
+loadCrimeData('all');
