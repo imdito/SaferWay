@@ -7,7 +7,10 @@ header("Content-Type: application/json; charset=UTF-8");
 require_once '../routes/db.php';
 
 try {
-  // QUERY (Masih sama kayak punya lu, karena datanya udah bener)
+  // Ambil parameter filter dari request
+  $filter_level = isset($_GET['level']) ? $_GET['level'] : null;
+  
+  // Query dasar
   $sql = "
       WITH clustered_crimes AS (
         SELECT 
@@ -21,6 +24,15 @@ try {
         FROM crime_data cd
         JOIN crime_types ct ON cd.crime_type_id = ct.id
         JOIN criminality_levels cl ON cd.level_id = cl.id
+        WHERE 1=1
+  ";
+
+  // Tambahkan filter berdasarkan level jika ada
+  if ($filter_level && $filter_level !== 'all') {
+    $sql .= " AND cl.level_name = :level_name";
+  }
+
+  $sql .= "
       )
       SELECT 
         cluster_id,
@@ -35,10 +47,18 @@ try {
           'color', color_code
         )) as reports
       FROM clustered_crimes
-      GROUP BY cluster_id;
+      GROUP BY cluster_id
+      ORDER BY cluster_id;
     ";
 
-  $stmt = $pdo->query($sql);
+  $stmt = $pdo->prepare($sql);
+  
+  // Bind parameter jika ada filter
+  if ($filter_level && $filter_level !== 'all') {
+    $stmt->bindValue(':level_name', $filter_level);
+  }
+  
+  $stmt->execute();
   $features = [];
 
   while ($row = $stmt->fetch()) {
@@ -46,40 +66,39 @@ try {
     $reports = json_decode($row['reports'], true);
 
     // --- LOGIKA WARNA PRIORITAS ---
-    // Kita cari status paling parah dalam cluster ini.
-    // Urutan: Bahaya (#FF0000) > Rawan (#FFA500) > Siaga (#FFFF00) > Aman (#00FF00)
+    // Untuk filter, jika ada filter level tertentu, langsung gunakan warna level tersebut
+    if ($filter_level && $filter_level !== 'all') {
+      $finalColor = $reports[0]['color'];
+      $finalStatus = $reports[0]['level'];
+    } else {
+      // Jika tidak ada filter, gunakan logika prioritas seperti sebelumnya
+      $finalColor = '#00FF00'; // Default Aman (Hijau)
+      $finalStatus = 'Aman';
 
-    $finalColor = '#00FF00'; // Default Aman (Hijau)
-    $finalStatus = 'Aman';
+      foreach ($reports as $rpt) {
+        $c = strtoupper($rpt['color']);
 
-    foreach ($reports as $rpt) {
-      $c = strtoupper($rpt['color']);
+        if ($c == '#FF0000') {
+          $finalColor = '#FF0000';
+          $finalStatus = 'Area Bahaya';
+          break;
+        }
 
-      // 1. Kalau ketemu MERAH (Bahaya), langsung kunci! Ini level tertinggi.
-      if ($c == '#FF0000') {
-        $finalColor = '#FF0000';
-        $finalStatus = 'Area Bahaya';
-        break; // Gak perlu cek yang lain, udah pasti merah.
-      }
+        if ($c == '#FFA500' && $finalColor != '#FF0000') {
+          $finalColor = '#FFA500';
+          $finalStatus = 'Area Rawan';
+        }
 
-      // 2. Kalau ketemu ORANYE (Rawan), simpan, tapi jangan break (siapa tau ada merah nanti)
-      if ($c == '#FFA500' && $finalColor != '#FF0000') {
-        $finalColor = '#FFA500';
-        $finalStatus = 'Area Rawan';
-      }
-
-      // 3. Kalau ketemu KUNING (Siaga)
-      if ($c == '#FFFF00' && $finalColor == '#00FF00') {
-        $finalColor = '#FFFF00';
-        $finalStatus = 'Area Siaga';
+        if ($c == '#FFFF00' && $finalColor == '#00FF00') {
+          $finalColor = '#FFFF00';
+          $finalStatus = 'Area Siaga';
+        }
       }
     }
 
-    // Kalau single report, pake nama level aslinya aja biar rapi
     if ($count == 1) {
       $finalStatus = $reports[0]['level'];
     } else {
-      // Kalau cluster, tambahin info jumlah
       $finalStatus .= " (" . $count . " Kasus)";
     }
 
@@ -88,9 +107,9 @@ try {
       "geometry" => json_decode($row['center_geometry']),
       "properties" => [
         "count" => $count,
-        "status" => $finalStatus, // Status terburuk
-        "color" => $finalColor,   // Warna terburuk
-        "reports" => $reports     // Data lengkap buat slider
+        "status" => $finalStatus,
+        "color" => $finalColor,
+        "reports" => $reports
       ]
     ];
   }
