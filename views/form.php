@@ -136,7 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 
                 <div class="flex items-center gap-3">
-                    <a href="map.php" class="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition border border-blue-200">
+                    <a href="index.php" class="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition border border-blue-200">
                         <i data-lucide="map" class="w-4 h-4"></i>
                         <span class="hidden sm:inline text-sm font-semibold">Kembali ke Peta</span>
                     </a>
