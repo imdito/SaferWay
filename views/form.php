@@ -4,13 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lapor Kejahatan - SaferWay</title>
-    <link rel="stylesheet" href="form.css">
+    <link rel="stylesheet" href="/public/css/form.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Lapor Kejahatan</h1>
-            <p>Bantu masyarakat lebih aman dengan melaporkan kejadian kriminal</p>
+            <div class="hamburger-menu" id="hamburger-menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <div class="logo-container">
+                <div class="logo">S</div>
+                <div class="logo-text">
+                    <div class="title">SaferWay</div>
+                    <div class="subtitle">Yogyakarta</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Navigation -->
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-menu">
+                <div class="sidebar-section-title">Menu</div>
+                <a href="index.php" class="sidebar-menu-item">
+                    <i data-lucide="map"></i>
+                    <span>Peta Rute</span>
+                </a>
+                <a href="form.php" class="sidebar-menu-item active">
+                    <i data-lucide="file-text"></i>
+                    <span>Lapor Kejahatan</span>
+                </a>
+                <div class="sidebar-divider"></div>
+                <div class="sidebar-section-title">Informasi</div>
+                <button class="sidebar-menu-item">
+                    <i data-lucide="info"></i>
+                    <span>Tentang SaferWay</span>
+                </button>
+                <button class="sidebar-menu-item">
+                    <i data-lucide="help-circle"></i>
+                    <span>Bantuan</span>
+                </button>
+                <div class="sidebar-divider"></div>
+                <button class="sidebar-menu-item">
+                    <i data-lucide="settings"></i>
+                    <span>Pengaturan</span>
+                </button>
+            </div>
         </div>
 
         <div class="form-container">
@@ -259,6 +301,22 @@
         window.addEventListener('DOMContentLoaded', function() {
             fillUserInfo();
             updateMapPreview();
+            lucide.createIcons();
+            
+            // Sidebar toggle
+            const hamburgerMenu = document.getElementById('hamburger-menu');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+            hamburgerMenu.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+                sidebarOverlay.classList.toggle('active');
+            });
+
+            sidebarOverlay.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                sidebarOverlay.classList.remove('active');
+            });
         });
     </script>
 </body>
