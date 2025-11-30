@@ -2,26 +2,8 @@
 // login.php
 session_start();
 
-$host = 'localhost';
-$dbname = 'criminality';
-$username = 'postgres';
-$password = 'taufiq';
-$port = '5432';
+require_once '../routes/db.php';
 
-try {
-    // Tambahkan timeout dan options
-    $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;connect_timeout=5";
-    $options = [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false,
-        PDO::ATTR_TIMEOUT => 5
-    ];
-    
-    $pdo = new PDO($dsn, $username, $password, $options);
-} catch(PDOException $e) {
-    die("Koneksi database gagal: " . $e->getMessage() . "<br>Pastikan PostgreSQL berjalan di port " . $port);
-}
 // Redirect jika sudah login
 if (isset($_SESSION['user_id'])) {
     header('Location: form.php');
