@@ -9,8 +9,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📋 Lapor Kejahatan</h1>
-            <p>Bantu masyarakat Yogyakarta lebih aman dengan melaporkan kejadian kriminal</p>
+            <h1>Lapor Kejahatan</h1>
+            <p>Bantu masyarakat lebih aman dengan melaporkan kejadian kriminal</p>
         </div>
 
         <div class="form-container">
@@ -71,7 +71,7 @@
 
                 <!-- Lokasi Kejadian -->
                 <div class="form-section">
-                    <h2>📍 Lokasi Kejadian</h2>
+                    <h2>Lokasi Kejadian</h2>
 
                     <div class="form-group">
                         <label for="location_name" class="required">Nama Lokasi</label>
@@ -92,7 +92,7 @@
 
                     <div class="form-group">
                         <button type="button" class="btn" onclick="getCurrentLocation()">
-                            📍 Gunakan Lokasi Saat Ini
+                            Gunakan Lokasi Saat Ini
                         </button>
                     </div>
 
@@ -109,7 +109,7 @@
 
                 <!-- Informasi Pelapor -->
                 <div class="form-section">
-                    <h2>👤 Informasi Pelapor</h2>
+                    <h2>Informasi Pelapor</h2>
                     
                     <div class="form-group">
                         <label for="reporter_name">Nama Pelapor</label>
