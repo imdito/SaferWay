@@ -9,7 +9,6 @@ $password = 'taufiq';
 $port = '5432';
 
 try {
-    // Tambahkan timeout dan options
     $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;connect_timeout=5";
     $options = [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -20,12 +19,19 @@ try {
     
     $pdo = new PDO($dsn, $username, $password, $options);
 } catch(PDOException $e) {
-    die("Koneksi database gagal: " . $e->getMessage() . "<br>Pastikan PostgreSQL berjalan di port 5555");
+    die("Koneksi database gagal: " . $e->getMessage() . "<br>Pastikan PostgreSQL berjalan di port 5432");
 }
 
 // Cek login
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
+    exit();
+}
+
+// Proses Logout
+if (isset($_GET['logout'])) {
+    session_destroy();
+    header('Location: index.php');
     exit();
 }
 
@@ -84,28 +90,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 7 => 'Kekerasan', 8 => 'Narkoba', 9 => 'Lainnya'
             ];
             $crime_type_name = $crime_types[$crime_type];
-            
-            $crime_types = [
-                1 => 'Pencurian', 2 => 'Begal', 3 => 'Pencopetan',
-                4 => 'Penjambretan', 5 => 'Penipuan', 6 => 'Pengrusakan',
-                7 => 'Kekerasan', 8 => 'Narkoba', 9 => 'Lainnya'
-            ];
-            $crime_type_name = $crime_types[$crime_type];
 
             $sql = "INSERT INTO crime_data 
-                    (crime_type_id, level_id, location_name, coordinates, crime_date, description, area)
-                    VALUES (?, ?, ?, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?, ?, ?)";
+                    (crime_type_id, level_id, location_name, coordinates, crime_date, description, area, user_id, reporter_username, reporter_email)
+                    VALUES (?, ?, ?, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?, ?, ?, ?, ?, ?)";
 
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
-                $crime_type,        // 1. crime_type_id
-                $crime_level,       // 2. level_id
-                $location_name,     // 3. location_name
-                $longitude,         // 4. longitude (untuk ST_MakePoint parameter 1)
-                $latitude,          // 5. latitude (untuk ST_MakePoint parameter 2)
-                $crime_date,        // 6. crime_date
-                $description,       // 7. description
-                $crime_type_name    // 8. area
+                $crime_type,
+                $crime_level,
+                $location_name,
+                $longitude,
+                $latitude,
+                $crime_date,
+                $description,
+                $crime_type_name,
+                $user['id'],
+                $user['username'],
+                $user['email']
             ]);
 
             $success_message = "Laporan berhasil dikirim! Terima kasih atas kontribusi Anda.";
@@ -135,6 +137,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body class="bg-gray-50 text-slate-800">
 
+    <!-- Header dengan Logout -->
+    <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 max-w-3xl">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                        <i data-lucide="shield-alert" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-slate-800">SaferWay</h1>
+                        <p class="text-xs text-slate-500">Lapor Kejahatan</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <div class="hidden sm:block text-right">
+                        <p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($user['username']) ?></p>
+                        <p class="text-xs text-slate-500"><?= htmlspecialchars($user['email']) ?></p>
+                    </div>
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
+                        <?= strtoupper(substr($user['username'], 0, 1)) ?>
+                    </div>
+                    <button onclick="confirmLogout()" class="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition border border-red-200">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline text-sm font-semibold">Logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
     <div class="container mx-auto px-4 py-8 max-w-3xl">
 
         <?php if ($success_message): ?>
@@ -162,21 +195,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-            <div class="bg-blue-600 p-6 text-white text-center relative overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white text-center relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
                 <h2 class="text-2xl font-bold relative z-10">Formulir Laporan</h2>
                 <p class="text-blue-100 text-sm mt-1 relative z-10">Bantu kami menciptakan lingkungan yang lebih aman</p>
             </div>
 
-            <!-- Info User -->
-            <div class="bg-blue-50 border-b border-blue-100 p-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+            <!-- Info Pelapor -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100 p-5">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
                         <?= strtoupper(substr($user['username'], 0, 1)) ?>
                     </div>
-                    <div>
-                        <p class="font-bold text-slate-800"><?= htmlspecialchars($user['username']) ?></p>
-                        <p class="text-sm text-slate-600"><?= htmlspecialchars($user['email']) ?></p>
+                    <div class="flex-1">
+                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wide">Pelapor</p>
+                        <p class="font-bold text-slate-800 text-lg"><?= htmlspecialchars($user['username']) ?></p>
+                        <p class="text-sm text-slate-600 flex items-center gap-1">
+                            <i data-lucide="mail" class="w-3 h-3"></i>
+                            <?= htmlspecialchars($user['email']) ?>
+                        </p>
+                    </div>
+                    <div class="hidden md:flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-blue-200 shadow-sm">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-green-500"></i>
+                        <span class="text-xs font-semibold text-slate-600">Terverifikasi</span>
                     </div>
                 </div>
             </div>
@@ -252,7 +293,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <div>
                         <label class="block text-sm font-semibold text-gray-600 mb-1">Nama Lokasi <span class="text-red-500">*</span></label>
-                        <input type="text" id="location_name" name="location_name" placeholder="Contoh: Depan Indomaret Point" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
+                        <input type="text" id="location_name" name="location_name" placeholder="Contoh: Depan Indomaret Jl. Sudirman" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
                     </div>
 
                     <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
@@ -290,6 +331,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script>
         lucide.createIcons();
 
+        function confirmLogout() {
+            if (confirm('Apakah Anda yakin ingin logout?')) {
+                window.location.href = '?logout=1';
+            }
+        }
+
         const levelOptions = document.querySelectorAll('.level-option');
         levelOptions.forEach(opt => {
             opt.addEventListener('click', () => {
@@ -314,7 +361,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         function getCurrentLocation() {
             if (navigator.geolocation) {
-                const btn = event.target;
+                const btn = event.target.closest('button');
                 const oriText = btn.innerHTML;
                 btn.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Loading...`;
                 lucide.createIcons();
