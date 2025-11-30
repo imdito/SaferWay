@@ -105,6 +105,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Lapor Kejahatan - SaferWay</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -113,6 +115,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             to { transform: translateY(0); opacity: 1; }
         }
         .notification { animation: slideDown 0.5s ease-out; }
+        #map { height: 300px; border-radius: 0.5rem; }
+        .leaflet-container { z-index: 1; }
     </style>
 </head>
 <body class="bg-gray-50 text-slate-800">
@@ -132,6 +136,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 
                 <div class="flex items-center gap-3">
+                    <a href="map.php" class="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition border border-blue-200">
+                        <i data-lucide="map" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline text-sm font-semibold">Kembali ke Peta</span>
+                    </a>
                     <div class="hidden sm:block text-right">
                         <p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($user['username']) ?></p>
                         <p class="text-xs text-slate-500"><?= htmlspecialchars($user['email']) ?></p>
@@ -278,12 +286,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
                         <div class="flex justify-between items-center mb-3">
-                            <span class="text-sm font-bold text-slate-600">Titik Koordinat</span>
-                            <button type="button" onclick="getCurrentLocation()" class="text-xs flex items-center gap-1 bg-white border border-gray-300 px-3 py-1.5 rounded-md shadow-sm hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition">
-                                <i data-lucide="crosshair" class="w-3 h-3"></i> Ambil Lokasi Saya
-                            </button>
+                            <span class="text-sm font-bold text-slate-600">Pilih Lokasi di Peta</span>
+                            <div class="flex gap-2">
+                                <button type="button" onclick="getCurrentLocation()" class="text-xs flex items-center gap-1 bg-white border border-gray-300 px-3 py-1.5 rounded-md shadow-sm hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition">
+                                    <i data-lucide="crosshair" class="w-3 h-3"></i> Lokasi Saya
+                                </button>
+                                <button type="button" onclick="clearMarker()" class="text-xs flex items-center gap-1 bg-white border border-gray-300 px-3 py-1.5 rounded-md shadow-sm hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition">
+                                    <i data-lucide="x" class="w-3 h-3"></i> Hapus Marker
+                                </button>
+                            </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
+                        
+                        <!-- Peta Interaktif -->
+                        <div id="map" class="w-full"></div>
+                        
+                        <div class="grid grid-cols-2 gap-4 mt-4">
                             <div>
                                 <label class="text-xs text-gray-500 block mb-1">Latitude</label>
                                 <input type="number" id="latitude" name="latitude" step="any" placeholder="-7.xxx" required class="w-full px-3 py-2 bg-white border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 outline-none">
@@ -293,14 +310,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="number" id="longitude" name="longitude" step="any" placeholder="110.xxx" required class="w-full px-3 py-2 bg-white border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 outline-none">
                             </div>
                         </div>
-                        <div id="mapPreview" class="mt-3 h-24 bg-gray-200 rounded border border-gray-300 flex items-center justify-center text-gray-400 text-xs italic">
-                            <span class="flex items-center gap-1"><i data-lucide="map"></i> Peta akan muncul di sini</span>
-                        </div>
                     </div>
                 </div>
 
                 <div class="flex gap-4 pt-4">
-                    <button type="button" onclick="resetForm()" class="flex-1 py-3 border border-gray-300 text-gray-600 font-bold rounded-xl hover:bg-gray-100 transition">Reset</button>
+                    <a href="map.php" class="flex-1 py-3 border border-gray-300 text-gray-600 font-bold rounded-xl hover:bg-gray-100 transition text-center flex items-center justify-center gap-2">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali ke Peta
+                    </a>
                     <button type="submit" class="flex-[2] py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 hover:shadow-blue-500/30 transition transform active:scale-95">Kirim Laporan</button>
                 </div>
 
@@ -309,6 +325,101 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script>
+        // Inisialisasi variabel global untuk peta dan marker
+        let map, marker;
+
+        // Inisialisasi peta
+        function initMap() {
+            // Default center (Jakarta)
+            const defaultCenter = [-6.2088, 106.8456];
+            
+            // Inisialisasi peta
+            map = L.map('map').setView(defaultCenter, 13);
+
+            // Tambahkan tile layer (OpenStreetMap)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            // Event click pada peta untuk menambahkan marker
+            map.on('click', function(e) {
+                const { lat, lng } = e.latlng;
+                updateMarker(lat, lng);
+                updateCoordinateInputs(lat, lng);
+            });
+
+            // Coba dapatkan lokasi user saat ini
+            getCurrentLocation();
+        }
+
+        // Update marker di peta
+        function updateMarker(lat, lng) {
+            // Hapus marker lama jika ada
+            if (marker) {
+                map.removeLayer(marker);
+            }
+
+            // Tambahkan marker baru
+            marker = L.marker([lat, lng])
+                .addTo(map)
+                .bindPopup('Lokasi Kejadian<br>Lat: ' + lat.toFixed(6) + '<br>Lng: ' + lng.toFixed(6))
+                .openPopup();
+
+            // Pan map ke marker
+            map.setView([lat, lng], 15);
+        }
+
+        // Update input koordinat
+        function updateCoordinateInputs(lat, lng) {
+            document.getElementById('latitude').value = lat.toFixed(6);
+            document.getElementById('longitude').value = lng.toFixed(6);
+        }
+
+        // Hapus marker
+        function clearMarker() {
+            if (marker) {
+                map.removeLayer(marker);
+                marker = null;
+            }
+            document.getElementById('latitude').value = '';
+            document.getElementById('longitude').value = '';
+        }
+
+        // Dapatkan lokasi saat ini
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                const btn = event?.target || document.querySelector('button[onclick="getCurrentLocation()"]');
+                const oriText = btn.innerHTML;
+                btn.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Loading...`;
+                lucide.createIcons();
+
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        const lat = pos.coords.latitude;
+                        const lng = pos.coords.longitude;
+                        
+                        updateMarker(lat, lng);
+                        updateCoordinateInputs(lat, lng);
+                        
+                        btn.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i> Sukses`;
+                        lucide.createIcons();
+                        setTimeout(() => { 
+                            btn.innerHTML = `<i data-lucide="crosshair" class="w-3 h-3"></i> Lokasi Saya`; 
+                            lucide.createIcons(); 
+                        }, 2000);
+                    },
+                    (err) => {
+                        alert('Gagal mengambil lokasi. Pastikan GPS aktif atau pilih lokasi manual di peta.');
+                        btn.innerHTML = `<i data-lucide="crosshair" class="w-3 h-3"></i> Lokasi Saya`;
+                        lucide.createIcons();
+                    }
+                );
+            } else {
+                alert('Browser tidak mendukung GPS. Silakan pilih lokasi manual di peta.');
+            }
+        }
+
+        // Fungsi lainnya
         lucide.createIcons();
 
         function confirmLogout() {
@@ -339,48 +450,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             });
         });
 
-        function getCurrentLocation() {
-            if (navigator.geolocation) {
-                const btn = event.target.closest('button');
-                const oriText = btn.innerHTML;
-                btn.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Loading...`;
-                lucide.createIcons();
-
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        document.getElementById('latitude').value = pos.coords.latitude.toFixed(6);
-                        document.getElementById('longitude').value = pos.coords.longitude.toFixed(6);
-                        updateMapPreview();
-                        btn.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i> Sukses`;
-                        lucide.createIcons();
-                        setTimeout(() => { btn.innerHTML = oriText; lucide.createIcons(); }, 2000);
-                    },
-                    (err) => {
-                        alert('Gagal mengambil lokasi. Pastikan GPS aktif.');
-                        btn.innerHTML = oriText;
-                        lucide.createIcons();
-                    }
-                );
-            } else {
-                alert('Browser tidak mendukung GPS.');
-            }
-        }
-
-        function updateMapPreview() {
-            const lat = document.getElementById('latitude').value;
-            const lng = document.getElementById('longitude').value;
-            const box = document.getElementById('mapPreview');
-            if (lat && lng) {
-                box.innerHTML = `<span class="text-blue-600 font-bold">📍 ${lat}, ${lng}</span>`;
-                box.classList.add('bg-blue-50', 'border-blue-200');
-            }
-        }
-
         function resetForm() {
             if (confirm("Hapus semua isian?")) {
                 document.querySelector('form').reset();
-                document.getElementById('mapPreview').innerHTML = '<span class="flex items-center gap-1"><i data-lucide="map"></i> Peta akan muncul di sini</span>';
-                document.getElementById('mapPreview').classList.remove('bg-blue-50', 'border-blue-200');
+                clearMarker();
                 levelOptions.forEach(o => {
                     o.classList.remove('ring-2', 'ring-offset-1', 'bg-green-100', 'bg-yellow-100', 'bg-orange-100', 'bg-red-100', 'ring-green-500', 'ring-yellow-500', 'ring-orange-500', 'ring-red-500');
                 });
@@ -397,6 +470,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 setTimeout(() => notif.remove(), 500);
             });
         }, 5000);
+
+        // Inisialisasi peta saat halaman dimuat
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
+        });
     </script>
 </body>
 </html>
