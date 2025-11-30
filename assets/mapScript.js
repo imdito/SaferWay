@@ -105,36 +105,25 @@ async function loadCrimeData(filterLevel = 'all') {
 // --- FITUR GPS ---
 function useCurrentLocation() {
     const inputA = document.getElementById('start-input');
-    inputA.value = "Mencari lokasi...";
-    inputA.parentElement.querySelector('i[data-lucide="circle-dot"]').classList.add("animate-pulse");
-    startSuggestions.classList.add('hidden'); // Hide suggestions
+    inputA.value = "Mencari...";
+    inputA.parentElement.classList.add("animate-pulse");
     map.locate({ setView: true, maxZoom: 16 });
 }
 
 map.on('locationfound', (e) => {
-    document.querySelector('i[data-lucide="circle-dot"]').classList.remove("animate-pulse");
+    document.getElementById('start-input').parentElement.classList.remove("animate-pulse");
     startPoint = e.latlng;
     document.getElementById('start-input').value = "📍 Lokasi Saya";
 
-    // Remove old start marker
-    if (startMarker) map.removeLayer(startMarker);
-    
-    // Add GPS marker
-    startMarker = L.circleMarker(e.latlng, { 
-        radius: 8, 
-        color: '#2563eb', 
-        fillColor: '#3b82f6', 
-        fillOpacity: 1,
-        weight: 2
-    }).addTo(map).bindPopup("📍 Posisi Anda").openPopup();
+    map.eachLayer(l => { if (l.options.className === 'gps-marker') map.removeLayer(l); });
+    L.circleMarker(e.latlng, { radius: 8, color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 1, className: 'gps-marker' }).addTo(map).bindPopup("Posisi Anda").openPopup();
 
     if (endPoint) calculateRoute();
 });
 
 map.on('locationerror', () => { 
-    alert("Gagal mendapatkan lokasi GPS. Pastikan GPS aktif dan izin lokasi diberikan."); 
+    alert("Gagal ambil lokasi GPS."); 
     document.getElementById('start-input').value = ""; 
-    document.querySelector('i[data-lucide="circle-dot"]').classList.remove("animate-pulse");
 });
 
 // --- KLIK PETA ---
