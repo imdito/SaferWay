@@ -2,25 +2,7 @@
 // Konfigurasi Database
 session_start();
 
-$host = 'localhost';
-$dbname = 'criminality';
-$username = 'postgres';
-$password = 'taufiq';
-$port = '5432';
-
-try {
-    $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;connect_timeout=5";
-    $options = [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false,
-        PDO::ATTR_TIMEOUT => 5
-    ];
-    
-    $pdo = new PDO($dsn, $username, $password, $options);
-} catch(PDOException $e) {
-    die("Koneksi database gagal: " . $e->getMessage() . "<br>Pastikan PostgreSQL berjalan di port " . $port);
-}
+require_once '../routes/db.php';
 
 // Cek login
 if (!isset($_SESSION['user_id'])) {
@@ -91,25 +73,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ];
             $crime_type_name = $crime_types[$crime_type];
 
-            $sql = "INSERT INTO crime_data 
-                    (crime_type_id, level_id, location_name, coordinates, crime_date, description, area, user_id, reporter_username, reporter_email)
-                    VALUES (?, ?, ?, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?, ?, ?, ?, ?, ?)";
+                $sql = "INSERT INTO crime_data 
+                        (crime_type_id, level_id, location_name, coordinates, crime_date, description)
+                        VALUES (?, ?, ?, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?, ?)";
 
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([
-                $crime_type,
-                $crime_level,
-                $location_name,
-                $longitude,
-                $latitude,
-                $crime_date,
-                $description,
-                $crime_type_name,
-                $user['id'],
-                $user['username'],
-                $user['email']
-            ]);
+                $stmt = $pdo->prepare($sql);
 
+                $params = [
+                    $crime_type,        // 1: crime_type_id
+                    $crime_level,       // 2: level_id
+                    $location_name,     // 3: location_name
+                    $longitude,         // 4: longitude (untuk ST_MakePoint parameter 1)
+                    $latitude,          // 5: latitude (untuk ST_MakePoint parameter 2)
+                    $crime_date,        // 6: crime_date
+                    $description        // 7: description
+                ];
+
+                $stmt->execute($params);
             $success_message = "Laporan berhasil dikirim! Terima kasih atas kontribusi Anda.";
         }
     } catch(PDOException $e) {
