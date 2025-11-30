@@ -6,13 +6,21 @@ $host = 'localhost';
 $dbname = 'criminality';
 $username = 'postgres';
 $password = 'taufiq';
-$port = '5555';
+$port = '5432';
 
 try {
-    $pdo = new PDO("pgsql:host=$host;dbname=$dbname", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // Tambahkan timeout dan options
+    $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;connect_timeout=5";
+    $options = [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false,
+        PDO::ATTR_TIMEOUT => 5
+    ];
+    
+    $pdo = new PDO($dsn, $username, $password, $options);
 } catch(PDOException $e) {
-    die("Koneksi database gagal: " . $e->getMessage());
+    die("Koneksi database gagal: " . $e->getMessage() . "<br>Pastikan PostgreSQL berjalan di port 5555");
 }
 
 // Cek login
