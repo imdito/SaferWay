@@ -19,7 +19,7 @@ try {
     
     $pdo = new PDO($dsn, $username, $password, $options);
 } catch(PDOException $e) {
-    die("Koneksi database gagal: " . $e->getMessage() . "<br>Pastikan PostgreSQL berjalan di port 5432");
+    die("Koneksi database gagal: " . $e->getMessage() . "<br>Pastikan PostgreSQL berjalan di port " . $port);
 }
 
 // Cek login
