@@ -1,8 +1,8 @@
 <?php
 $host = 'localhost';
-$db = 'criminality';
+$db = 'saferway_full';
 $user = 'postgres';
-$pass = 'root';
+$pass = 'konpachi';
 $port = '5432';
 
 $dsn = "pgsql:host=$host;port=$port;dbname=$db;";

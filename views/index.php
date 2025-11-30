@@ -43,6 +43,14 @@
         .filter-backdrop {
             background: rgba(0, 0, 0, 0.5);
         }
+        
+        .suggestion-item {
+            transition: background-color 0.15s ease;
+        }
+        
+        .suggestion-item:hover {
+            background-color: #f3f4f6;
+        }
     </style>
 </head>
 
@@ -164,11 +172,12 @@
                         <div class="flex items-center gap-2">
                             <i data-lucide="circle-dot" class="w-5 h-5 text-green-600 bg-white"></i>
                             <div class="flex-1 flex items-center relative">
-                                <input type="text" id="start-input" placeholder="Titik Awal (Klik Peta)" readonly
+                                <input type="text" id="start-input" placeholder="Cari atau klik peta untuk titik awal"
                                     class="w-full pl-3 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                                 <button onclick="useCurrentLocation()"
                                     class="absolute right-2 p-1 text-gray-400 hover:text-blue-600 transition"
                                     title="Gunakan Lokasi Saya"><i data-lucide="crosshair" class="w-4 h-4"></i></button>
+                                <div id="start-suggestions" class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto z-50"></div>
                             </div>
                         </div>
                     </div>
@@ -176,8 +185,11 @@
                     <div class="relative z-10">
                         <div class="flex items-center gap-2">
                             <i data-lucide="map-pin" class="w-5 h-5 text-red-600 bg-white"></i>
-                            <input type="text" id="end-input" placeholder="Tujuan (Klik Kanan Peta)" readonly
-                                class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <div class="flex-1 relative">
+                                <input type="text" id="end-input" placeholder="Cari atau klik kanan peta untuk tujuan"
+                                    class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                <div id="end-suggestions" class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto z-50"></div>
+                            </div>
                         </div>
                     </div>
                 </div>

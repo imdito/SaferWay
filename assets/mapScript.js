@@ -16,6 +16,9 @@ let routingControl = null;
 let startPoint = null;
 let endPoint = null;
 let currentMode = 'fastest';
+let searchTimeout = null;
+let startMarker = null;
+let endMarker = null;
 
 // --- LOAD DATA dengan Filter ---
 async function loadCrimeData(filterLevel = 'all') {
@@ -102,44 +105,91 @@ async function loadCrimeData(filterLevel = 'all') {
 // --- FITUR GPS ---
 function useCurrentLocation() {
     const inputA = document.getElementById('start-input');
-    inputA.value = "Mencari...";
-    inputA.parentElement.classList.add("animate-pulse");
+    inputA.value = "Mencari lokasi...";
+    inputA.parentElement.querySelector('i[data-lucide="circle-dot"]').classList.add("animate-pulse");
+    startSuggestions.classList.add('hidden'); // Hide suggestions
     map.locate({ setView: true, maxZoom: 16 });
 }
 
 map.on('locationfound', (e) => {
-    document.getElementById('start-input').parentElement.classList.remove("animate-pulse");
+    document.querySelector('i[data-lucide="circle-dot"]').classList.remove("animate-pulse");
     startPoint = e.latlng;
     document.getElementById('start-input').value = "📍 Lokasi Saya";
 
-    map.eachLayer(l => { if (l.options.className === 'gps-marker') map.removeLayer(l); });
-    L.circleMarker(e.latlng, { radius: 8, color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 1, className: 'gps-marker' }).addTo(map).bindPopup("Posisi Anda").openPopup();
+    // Remove old start marker
+    if (startMarker) map.removeLayer(startMarker);
+    
+    // Add GPS marker
+    startMarker = L.circleMarker(e.latlng, { 
+        radius: 8, 
+        color: '#2563eb', 
+        fillColor: '#3b82f6', 
+        fillOpacity: 1,
+        weight: 2
+    }).addTo(map).bindPopup("📍 Posisi Anda").openPopup();
 
     if (endPoint) calculateRoute();
 });
 
 map.on('locationerror', () => { 
-    alert("Gagal ambil lokasi GPS."); 
+    alert("Gagal mendapatkan lokasi GPS. Pastikan GPS aktif dan izin lokasi diberikan."); 
     document.getElementById('start-input').value = ""; 
+    document.querySelector('i[data-lucide="circle-dot"]').classList.remove("animate-pulse");
 });
 
-// --- KLIK KANAN ---
+// --- KLIK PETA ---
+// Left click for start point
+map.on('click', (e) => {
+    setStart(e.latlng);
+});
+
+// Right click for destination
 map.on('contextmenu', (e) => {
-    if (!startPoint) setStart(e.latlng);
-    else if (!endPoint) setEnd(e.latlng);
-    else { startPoint = null; endPoint = null; setStart(e.latlng); }
+    setEnd(e.latlng);
 });
 
 function setStart(latlng) {
     startPoint = latlng;
-    document.getElementById('start-input').value = `${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`;
-    L.popup().setLatLng(latlng).setContent("📍 Start").openOn(map);
-    if (routingControl) { map.removeControl(routingControl); routingControl = null; }
+    document.getElementById('start-input').value = `📍 ${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`;
+    startSuggestions.classList.add('hidden');
+    
+    // Remove old marker
+    if (startMarker) map.removeLayer(startMarker);
+    
+    // Add new marker
+    startMarker = L.circleMarker(latlng, {
+        radius: 8,
+        color: '#10b981',
+        fillColor: '#34d399',
+        fillOpacity: 1,
+        weight: 2
+    }).addTo(map).bindPopup("📍 Titik Awal").openPopup();
+    
+    if (routingControl) { 
+        map.removeControl(routingControl); 
+        routingControl = null; 
+    }
+    
+    if (endPoint) calculateRoute();
 }
 
 function setEnd(latlng) {
     endPoint = latlng;
-    document.getElementById('end-input').value = `${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`;
+    document.getElementById('end-input').value = `🎯 ${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}`;
+    endSuggestions.classList.add('hidden');
+    
+    // Remove old marker
+    if (endMarker) map.removeLayer(endMarker);
+    
+    // Add new marker
+    endMarker = L.circleMarker(latlng, {
+        radius: 8,
+        color: '#ef4444',
+        fillColor: '#f87171',
+        fillOpacity: 1,
+        weight: 2
+    }).addTo(map).bindPopup("🎯 Tujuan").openPopup();
+    
     calculateRoute();
 }
 
@@ -306,6 +356,234 @@ function filterCrimeData(level) {
     console.log('Menerapkan filter:', level);
     loadCrimeData(level);
 }
+
+// --- AUTOCOMPLETE SEARCH FUNCTIONALITY ---
+const startInput = document.getElementById('start-input');
+const endInput = document.getElementById('end-input');
+const startSuggestions = document.getElementById('start-suggestions');
+const endSuggestions = document.getElementById('end-suggestions');
+
+// Debounced search function using integrated API
+async function searchLocation(query, suggestionsElement, isStart) {
+    if (query.length < 2) {
+        suggestionsElement.classList.add('hidden');
+        return;
+    }
+    
+    const url = `../controller/search_location.php?q=${encodeURIComponent(query)}`;
+    
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.results && data.results.length > 0) {
+            displaySuggestions(data.results, suggestionsElement, isStart);
+        } else {
+            suggestionsElement.innerHTML = '<div class="p-3 text-sm text-gray-500 text-center">Tidak ada hasil ditemukan</div>';
+            suggestionsElement.classList.remove('hidden');
+        }
+    } catch (error) {
+        console.error('Search error:', error);
+        suggestionsElement.innerHTML = '<div class="p-3 text-sm text-red-500 text-center">Error mencari lokasi</div>';
+        suggestionsElement.classList.remove('hidden');
+    }
+}
+
+// Display search suggestions with enhanced UI for local crime data
+function displaySuggestions(results, suggestionsElement, isStart) {
+    suggestionsElement.innerHTML = '';
+    
+    results.forEach(result => {
+        const item = document.createElement('div');
+        item.className = 'suggestion-item p-3 cursor-pointer border-b border-gray-100 last:border-b-0';
+        
+        // Different styling for local crime data vs external locations
+        if (result.type === 'local') {
+            const crimeIcon = result.crime_count >= 5 ? '🔴' : result.crime_count >= 3 ? '🟠' : '🟡';
+            
+            item.innerHTML = `
+                <div class="flex items-start gap-2">
+                    <i data-lucide="alert-circle" class="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0"></i>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                            <div class="text-sm font-medium text-gray-800 truncate">${result.display_name}</div>
+                            <span class="text-xs px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded font-bold">${result.crime_count}</span>
+                        </div>
+                        <div class="text-xs text-gray-500">${result.area} ${crimeIcon}</div>
+                    </div>
+                </div>
+            `;
+        } else {
+            const displayName = result.label || result.display_name.split(',')[0];
+            const fullName = result.display_name;
+            
+            item.innerHTML = `
+                <div class="flex items-start gap-2">
+                    <i data-lucide="map-pin" class="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0"></i>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-medium text-gray-800 truncate">${displayName}</div>
+                        <div class="text-xs text-gray-500 truncate">${fullName}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        item.addEventListener('click', () => {
+            selectLocation(result, isStart);
+        });
+        
+        suggestionsElement.appendChild(item);
+    });
+    
+    lucide.createIcons();
+    suggestionsElement.classList.remove('hidden');
+}
+
+// Select a location from suggestions
+function selectLocation(result, isStart) {
+    const latlng = L.latLng(parseFloat(result.lat), parseFloat(result.lon));
+    const displayName = result.label || result.display_name.split(',')[0];
+    
+    if (isStart) {
+        startPoint = latlng;
+        startInput.value = displayName;
+        startSuggestions.classList.add('hidden');
+        
+        // Remove old marker
+        if (startMarker) map.removeLayer(startMarker);
+        
+        // Add new marker with different color for crime locations
+        const markerColor = result.type === 'local' ? '#f59e0b' : '#10b981';
+        const markerFill = result.type === 'local' ? '#fbbf24' : '#34d399';
+        
+        startMarker = L.circleMarker(latlng, {
+            radius: result.type === 'local' ? 10 : 8,
+            color: markerColor,
+            fillColor: markerFill,
+            fillOpacity: 1,
+            weight: 2
+        }).addTo(map);
+        
+        // Add popup with crime warning if local location
+        if (result.type === 'local') {
+            startMarker.bindPopup(`
+                📍 Titik Awal: ${displayName}<br>
+                <span class="text-xs text-orange-600">⚠️ ${result.crime_count} laporan kejahatan</span>
+            `).openPopup();
+        } else {
+            startMarker.bindPopup(`📍 Titik Awal: ${displayName}`).openPopup();
+        }
+        
+        map.setView(latlng, 16);
+        
+        // Auto calculate if end point exists
+        if (endPoint) calculateRoute();
+    } else {
+        endPoint = latlng;
+        endInput.value = displayName;
+        endSuggestions.classList.add('hidden');
+        
+        // Remove old marker
+        if (endMarker) map.removeLayer(endMarker);
+        
+        // Add new marker with different color for crime locations
+        const markerColor = result.type === 'local' ? '#f59e0b' : '#ef4444';
+        const markerFill = result.type === 'local' ? '#fbbf24' : '#f87171';
+        
+        endMarker = L.circleMarker(latlng, {
+            radius: result.type === 'local' ? 10 : 8,
+            color: markerColor,
+            fillColor: markerFill,
+            fillOpacity: 1,
+            weight: 2
+        }).addTo(map);
+        
+        // Add popup with crime warning if local location
+        if (result.type === 'local') {
+            endMarker.bindPopup(`
+                🎯 Tujuan: ${displayName}<br>
+                <span class="text-xs text-orange-600">⚠️ ${result.crime_count} laporan kejahatan</span>
+            `).openPopup();
+        } else {
+            endMarker.bindPopup(`🎯 Tujuan: ${displayName}`).openPopup();
+        }
+        
+        map.setView(latlng, 16);
+        
+        // Auto calculate if start point exists
+        if (startPoint) calculateRoute();
+    }
+}
+
+// Event listeners for search inputs
+startInput.addEventListener('input', (e) => {
+    clearTimeout(searchTimeout);
+    const query = e.target.value.trim();
+    
+    if (query.length < 2) {
+        startSuggestions.classList.add('hidden');
+        return;
+    }
+    
+    // Show loading state
+    startSuggestions.innerHTML = '<div class="p-3 text-sm text-gray-500 text-center flex items-center justify-center gap-2"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Mencari...</div>';
+    startSuggestions.classList.remove('hidden');
+    lucide.createIcons();
+    
+    searchTimeout = setTimeout(() => {
+        searchLocation(query, startSuggestions, true);
+    }, 400);
+});
+
+endInput.addEventListener('input', (e) => {
+    clearTimeout(searchTimeout);
+    const query = e.target.value.trim();
+    
+    if (query.length < 2) {
+        endSuggestions.classList.add('hidden');
+        return;
+    }
+    
+    // Show loading state
+    endSuggestions.innerHTML = '<div class="p-3 text-sm text-gray-500 text-center flex items-center justify-center gap-2"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Mencari...</div>';
+    endSuggestions.classList.remove('hidden');
+    lucide.createIcons();
+    
+    searchTimeout = setTimeout(() => {
+        searchLocation(query, endSuggestions, false);
+    }, 400);
+});
+
+// Clear search when input is focused and empty
+startInput.addEventListener('focus', () => {
+    if (startInput.value.trim() === '') {
+        startPoint = null;
+        if (startMarker) {
+            map.removeLayer(startMarker);
+            startMarker = null;
+        }
+    }
+});
+
+endInput.addEventListener('focus', () => {
+    if (endInput.value.trim() === '') {
+        endPoint = null;
+        if (endMarker) {
+            map.removeLayer(endMarker);
+            endMarker = null;
+        }
+    }
+});
+
+// Close suggestions when clicking outside
+document.addEventListener('click', (e) => {
+    if (!startInput.contains(e.target) && !startSuggestions.contains(e.target)) {
+        startSuggestions.classList.add('hidden');
+    }
+    if (!endInput.contains(e.target) && !endSuggestions.contains(e.target)) {
+        endSuggestions.classList.add('hidden');
+    }
+});
 
 // Load data pertama kali dengan filter 'all'
 loadCrimeData('all');
