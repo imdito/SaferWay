@@ -184,19 +184,32 @@
         // 1. Initialize Icons
         lucide.createIcons();
 
-        // 2. Sidebar Logic
+        // Sidebar toggle
         const hamburgerMenu = document.getElementById('hamburger-menu');
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const searchPanel = document.querySelector('.search-panel');
+        const legend = document.querySelector('.legend');
 
         hamburgerMenu.addEventListener('click', () => {
             sidebar.classList.toggle('active');
             sidebarOverlay.classList.toggle('active');
+            
+            // Hide search panel and legend when sidebar opens
+            if (sidebar.classList.contains('active')) {
+                searchPanel.style.display = 'none';
+                legend.style.display = 'none';
+            } else {
+                searchPanel.style.display = 'block';
+                legend.style.display = 'block';
+            }
         });
 
         sidebarOverlay.addEventListener('click', () => {
             sidebar.classList.remove('active');
             sidebarOverlay.classList.remove('active');
+            searchPanel.style.display = 'block';
+            legend.style.display = 'block';
         });
 
         // 3. Route Type Selection Logic

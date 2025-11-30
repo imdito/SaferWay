@@ -88,7 +88,7 @@ body {
     border-radius: 16px;
     box-shadow: 0 4px 24px rgba(0,0,0,0.12);
     padding: 20px;
-    z-index: 50;
+    z-index: 30;
 }
 
 .input-group {
@@ -220,7 +220,7 @@ body {
     border-radius: 16px;
     box-shadow: 0 4px 24px rgba(0,0,0,0.12);
     padding: 20px;
-    z-index: 50;
+    z-index: 30;
 }
 
 .legend-title {
@@ -286,7 +286,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    z-index: 50;
+    z-index: 30;
 }
 
 .map-control-btn {
@@ -356,7 +356,7 @@ body {
     height: calc(100vh - 80px);
     background: white;
     box-shadow: 2px 0 8px rgba(0,0,0,0.1);
-    z-index: 90;
+    z-index: 95;
     transition: left 0.3s ease;
     overflow-y: auto;
 }
@@ -372,7 +372,7 @@ body {
     width: 100%;
     height: calc(100vh - 80px);
     background: rgba(0,0,0,0.3);
-    z-index: 85;
+    z-index: 90;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
