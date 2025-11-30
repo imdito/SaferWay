@@ -2,8 +2,8 @@
 $host = 'localhost';
 $db = 'criminality';
 $user = 'postgres';
-$pass = 'a';
-$port = '5555';
+$pass = 'root';
+$port = '5432';
 
 $dsn = "pgsql:host=$host;port=$port;dbname=$db;";
 
