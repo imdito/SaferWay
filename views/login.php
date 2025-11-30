@@ -20,7 +20,7 @@ try {
     
     $pdo = new PDO($dsn, $username, $password, $options);
 } catch(PDOException $e) {
-    die("Koneksi database gagal: " . $e->getMessage() . "<br>Pastikan PostgreSQL berjalan di port 5555");
+    die("Koneksi database gagal: " . $e->getMessage() . "<br>Pastikan PostgreSQL berjalan di port " . $port);
 }
 // Redirect jika sudah login
 if (isset($_SESSION['user_id'])) {
