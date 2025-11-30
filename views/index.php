@@ -4,16 +4,26 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sistem Pencarian Rute Aman - SaferWay</title>
+    
     <link rel="stylesheet" href="/public/css/globals.css" />
-    <link rel="stylesheet" href="/public/css/index.css" />
+    <link rel="stylesheet" href="../public/css/index.css" />
     <link rel="stylesheet" href="/public/css/styles.css" />
-    <!-- Lucide Icons -->
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* CSS Fix biar peta muncul full */
+        #map { height: 100vh; width: 100%; z-index: 0; }
+        .sidebar, .search-panel, .legend, .map-controls { z-index: 1000; }
+    </style>
 </head>
 <body>
     <div class="map-container">
-        <!-- Header -->
-        <div class="header">
+        <div class="header" style="z-index: 1001;">
             <div class="hamburger-menu" id="hamburger-menu">
                 <span></span>
                 <span></span>
@@ -28,7 +38,6 @@
             </div>
         </div>
 
-        <!-- Sidebar Navigation -->
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
         <div class="sidebar" id="sidebar">
             <div class="sidebar-menu">
@@ -58,20 +67,21 @@
                 </button>
             </div>
         </div>
+        
+        <div id="map"></div>
 
-        <!-- Search Panel -->
         <div class="search-panel">
             <div class="input-group">
                 <div class="input-wrapper">
                     <i data-lucide="circle" class="input-icon red"></i>
-                    <input type="text" id="origin" placeholder="Pilih titik awal" />
+                    <input type="text" id="origin" placeholder="Pilih titik awal" value="Tugu Yogyakarta" />
                 </div>
             </div>
             
             <div class="input-group">
                 <div class="input-wrapper">
                     <i data-lucide="map-pin" class="input-icon red"></i>
-                    <input type="text" id="destination" placeholder="Pilih tujuan" />
+                    <input type="text" id="destination" placeholder="Pilih tujuan" value="Ambarrukmo Plaza" />
                 </div>
             </div>
             
@@ -93,16 +103,16 @@
                 <i data-lucide="search" style="width: 18px; height: 18px;"></i>
                 <span>Cari rute</span>
             </button>
+            
+            <div id="result-info" style="margin-top:10px; font-size: 12px; display:none;" class="alert alert-info p-2">
+                Menghitung rute...
+            </div>
         </div>
 
-        <!-- Legend -->
         <div class="legend">
             <div class="legend-title">Indikator Tingkat Kriminalitas</div>
             <div class="legend-item">
                 <div class="legend-indicator">
-                    <div class="legend-circle safe">
-                        <div class="legend-circle-inner"></div>
-                    </div>
                     <div class="legend-circle safe">
                         <div class="legend-circle-inner"></div>
                     </div>
@@ -118,9 +128,6 @@
                     <div class="legend-circle alert">
                         <div class="legend-circle-inner"></div>
                     </div>
-                    <div class="legend-circle alert">
-                        <div class="legend-circle-inner"></div>
-                    </div>
                 </div>
                 <div class="legend-text">
                     <div class="name">Siaga</div>
@@ -133,7 +140,6 @@
                     <div class="legend-circle prone">
                         <div class="legend-circle-inner"></div>
                     </div>
-                    <i data-lucide="triangle-alert" style="width: 16px; height: 16px; color: #FF9800;"></i>
                 </div>
                 <div class="legend-text">
                     <div class="name">Rawan</div>
@@ -146,7 +152,6 @@
                     <div class="legend-circle dangerous">
                         <div class="legend-circle-inner"></div>
                     </div>
-                    <i data-lucide="alert-circle" style="width: 16px; height: 16px; color: #F44336;"></i>
                 </div>
                 <div class="legend-text">
                     <div class="name">Bahaya</div>
@@ -155,71 +160,31 @@
             </div>
         </div>
         
-        <!-- Map Controls -->
         <div class="map-controls">
-            <button class="map-control-btn">
+            <button class="map-control-btn" id="zoom-in-btn">
                 <i data-lucide="plus" style="width: 20px; height: 20px;"></i>
             </button>
-            <button class="map-control-btn">
+            <button class="map-control-btn" id="zoom-out-btn">
                 <i data-lucide="minus" style="width: 20px; height: 20px;"></i>
             </button>
-            <button class="map-control-btn">
+            <button class="map-control-btn" onclick="map.fitBounds(currentRouteLine.getBounds())">
                 <i data-lucide="maximize" style="width: 20px; height: 20px;"></i>
             </button>
             <button class="map-control-btn">
                 <i data-lucide="navigation" style="width: 20px; height: 20px;"></i>
             </button>
         </div>
-        
-        <!-- Crime Zones -->
-        <div class="crime-zone zone-alert" style="width: 300px; height: 300px; top: 15%; left: 25%;">
-            <div class="zone-marker marker-alert">
-                <i data-lucide="triangle-alert" style="width: 20px; height: 20px;"></i>
-            </div>
-        </div>
-        
-        <div class="crime-zone zone-safe" style="width: 250px; height: 250px; top: 28%; left: 58%;">
-            <div class="zone-marker marker-safe">
-                <i data-lucide="shield-check" style="width: 20px; height: 20px;"></i>
-            </div>
-        </div>
-        
-        <div class="crime-zone zone-prone" style="width: 280px; height: 280px; top: 20%; left: 10%;">
-            <div class="zone-marker marker-prone">
-                <i data-lucide="alert-triangle" style="width: 20px; height: 20px;"></i>
-            </div>
-        </div>
-        
-        <div class="crime-zone zone-alert" style="width: 260px; height: 260px; top: 45%; left: 35%;">
-            <div class="zone-marker marker-alert">
-                <i data-lucide="triangle-alert" style="width: 20px; height: 20px;"></i>
-            </div>
-        </div>
-        
-        <div class="crime-zone zone-prone" style="width: 240px; height: 240px; bottom: 20%; right: 25%;">
-            <div class="zone-marker marker-prone">
-                <i data-lucide="alert-triangle" style="width: 20px; height: 20px;"></i>
-            </div>
-        </div>
-        
-        <div class="crime-zone zone-safe" style="width: 200px; height: 200px; top: 22%; right: 15%;">
-            <div class="zone-marker marker-safe">
-                <i data-lucide="shield-check" style="width: 20px; height: 20px;"></i>
-            </div>
-        </div>
-        
-        <div class="crime-zone zone-dangerous" style="width: 320px; height: 320px; bottom: 15%; right: 35%;">
-            <div class="zone-marker marker-dangerous">
-                <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
-            </div>
-        </div>
     </div>
+    
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <script>
-        // Initialize Lucide icons
+        // 1. Initialize Icons
         lucide.createIcons();
 
-        // Sidebar toggle
+        // 2. Sidebar Logic
         const hamburgerMenu = document.getElementById('hamburger-menu');
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebar-overlay');
@@ -234,32 +199,117 @@
             sidebarOverlay.classList.remove('active');
         });
 
-        // Route type selection
-        let selectedRoute = 'safest';
+        // 3. Route Type Selection Logic
+        let selectedRoute = 'safest'; // Default 'safest' -> mapped to 'safe' or 'safest' di backend
         const routeOptions = document.querySelectorAll('.route-option');
         
         routeOptions.forEach(option => {
             option.addEventListener('click', () => {
                 routeOptions.forEach(opt => opt.classList.remove('active'));
                 option.classList.add('active');
-                selectedRoute = option.getAttribute('data-route');
+                selectedRoute = option.getAttribute('data-route'); // 'safest' or 'shortest'
                 lucide.createIcons();
             });
         });
 
-        // Search functionality
+        // 4. MAP INITIALIZATION (LEAFLET)
+        var map = L.map('map', { zoomControl: false }).setView([-7.7828, 110.3800], 14);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        var currentRouteLine = null;
+
+        // 5. LOAD ZONES FROM DB (POSTGIS)
+        fetch('api/get_zones.php')
+            .then(res => res.json())
+            .then(data => {
+                L.geoJSON(data, {
+                    style: function(feature) {
+                        return { 
+                            color: feature.properties.color, 
+                            fillColor: feature.properties.color, 
+                            fillOpacity: 0.4, 
+                            weight: 2 
+                        };
+                    },
+                    onEachFeature: function(feature, layer) {
+                        layer.bindPopup(`<b>${feature.properties.name}</b><br>${feature.properties.level}`);
+                    }
+                }).addTo(map);
+            })
+            .catch(err => console.log("Gagal load zona, pastikan API get_zones.php ada.", err));
+
+        // 6. CONNECT ZOOM BUTTONS
+        document.getElementById('zoom-in-btn').onclick = function() { map.zoomIn(); };
+        document.getElementById('zoom-out-btn').onclick = function() { map.zoomOut(); };
+
+        // 7. SEARCH FUNCTIONALITY (THE CORE)
         const searchBtn = document.getElementById('search-btn');
+        const resultInfo = document.getElementById('result-info');
         
         searchBtn.addEventListener('click', () => {
             const origin = document.getElementById('origin').value;
             const destination = document.getElementById('destination').value;
 
-            if (origin && destination) {
-                const routeText = selectedRoute === 'safest' ? 'teraman' : 'terpendek';
-                alert('Mencari rute ' + routeText + ' dari ' + origin + ' ke ' + destination);
-            } else {
+            if (!origin || !destination) {
                 alert('Silakan masukkan titik awal dan tujuan');
+                return;
             }
+
+            // UI Feedback
+            resultInfo.style.display = 'block';
+            resultInfo.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menghubungi Server...';
+            resultInfo.className = "alert alert-info p-2 mt-2";
+
+            // HARDCODED COORDINATES (SIMULASI)
+            // Karena inputnya teks, kita perlu geocoding. 
+            // Untuk sementara kita pakai koordinat Tugu & Amplaz fix biar jalan dulu logicnya.
+            var startCoords = [-7.7828, 110.3670]; // Tugu
+            var endCoords = [-7.7830, 110.4010];   // Amplaz
+
+            // Mapping mode untuk backend: 'safest' -> 'safe', 'shortest' -> 'fast'
+            var backendMode = (selectedRoute === 'safest') ? 'safe' : 'fast';
+
+            // Hapus rute lama
+            if (currentRouteLine) map.removeLayer(currentRouteLine);
+
+            // PANGGIL API BACKEND (POSTGIS)
+            // Pastikan file api/get_route_pgrouting.php ada!
+            var url = `api/get_route_pgrouting.php?start_lat=${startCoords[0]}&start_lng=${startCoords[1]}&end_lat=${endCoords[0]}&end_lng=${endCoords[1]}&mode=${backendMode}`;
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        resultInfo.className = "alert alert-danger p-2 mt-2";
+                        resultInfo.innerText = "Error: " + data.error;
+                        return;
+                    }
+
+                    // GAMBAR GARIS RUTE
+                    currentRouteLine = L.geoJSON(data, {
+                        style: {
+                            color: backendMode === 'safe' ? '#198754' : '#6c757d', // Hijau (Aman) atau Abu (Cepat)
+                            weight: 6,
+                            opacity: 0.8
+                        }
+                    }).addTo(map);
+                    
+                    // Zoom ke rute
+                    map.fitBounds(currentRouteLine.getBounds(), {padding: [50, 50]});
+
+                    // Update Info
+                    resultInfo.className = "alert alert-success p-2 mt-2";
+                    resultInfo.innerHTML = `<b>Rute Ditemukan!</b><br>Mode: ${backendMode === 'safe' ? 'Teraman' : 'Terpendek'}`;
+                })
+                .catch(err => {
+                    console.error(err);
+                    resultInfo.className = "alert alert-warning p-2 mt-2";
+                    resultInfo.innerText = "Gagal koneksi ke API Routing.";
+                });
         });
     </script>
 </body>
