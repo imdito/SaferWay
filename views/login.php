@@ -259,14 +259,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
                 </div>
             </div>
         </div>
-
-        <!-- Info Testing -->
-        <div class="mt-6 text-center text-sm text-gray-500">
-            <p class="flex items-center justify-center gap-2">
-                <i data-lucide="info" class="w-4 h-4"></i>
-                Testing: admin@saferway.com / password123
-            </p>
-        </div>
     </div>
 
     <script>
