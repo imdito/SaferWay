@@ -1,323 +1,246 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lapor Kejahatan - SaferWay</title>
-    <link rel="stylesheet" href="/public/css/form.css">
+
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="hamburger-menu" id="hamburger-menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-            <div class="logo-container">
-                <div class="logo">S</div>
-                <div class="logo-text">
-                    <div class="title">SaferWay</div>
-                    <div class="subtitle">Yogyakarta</div>
+
+<body class="bg-gray-50 text-slate-800">
+
+    <?php include 'sidebar.php'; ?>
+
+    <div class="container mx-auto px-4 py-8 max-w-3xl">
+
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+            <div class="bg-blue-600 p-6 text-white text-center relative overflow-hidden">
+                <div
+                    class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10">
                 </div>
+                <h2 class="text-2xl font-bold relative z-10">Formulir Laporan</h2>
+                <p class="text-blue-100 text-sm mt-1 relative z-10">Bantu kami menciptakan lingkungan yang lebih aman
+                </p>
             </div>
-        </div>
 
-        <!-- Sidebar Navigation -->
-        <div class="sidebar-overlay" id="sidebar-overlay"></div>
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-menu">
-                <div class="sidebar-section-title">Menu</div>
-                <a href="index.php" class="sidebar-menu-item">
-                    <i data-lucide="map"></i>
-                    <span>Peta Rute</span>
-                </a>
-                <a href="form.php" class="sidebar-menu-item active">
-                    <i data-lucide="file-text"></i>
-                    <span>Lapor Kejahatan</span>
-                </a>
-                <div class="sidebar-divider"></div>
-                <div class="sidebar-section-title">Informasi</div>
-                <button class="sidebar-menu-item">
-                    <i data-lucide="info"></i>
-                    <span>Tentang SaferWay</span>
-                </button>
-                <button class="sidebar-menu-item">
-                    <i data-lucide="help-circle"></i>
-                    <span>Bantuan</span>
-                </button>
-                <div class="sidebar-divider"></div>
-                <button class="sidebar-menu-item">
-                    <i data-lucide="settings"></i>
-                    <span>Pengaturan</span>
-                </button>
-            </div>
-        </div>
+            <form id="crimeReportForm" action="submit_report.php" method="POST" class="p-6 md:p-8 space-y-8">
 
-        <div class="form-container">
-            <form id="crimeReportForm" action="submit_report.php" method="POST">
-                <!-- Informasi Kejahatan -->
-                <div class="form-section">
-                    <h2>📝 Informasi Kejahatan</h2>
-                    
-                    <div class="form-group">
-                        <label for="crime_type" class="required">Jenis Kejahatan</label>
-                        <select id="crime_type" name="crime_type" required>
-                            <option value="">Pilih Jenis Kejahatan</option>
-                            <option value="1">Pencurian</option>
-                            <option value="2">Begal</option>
-                            <option value="3">Pencopetan</option>
-                            <option value="4">Penjambretan</option>
-                            <option value="5">Penipuan</option>
-                            <option value="6">Pengrusakan</option>
-                            <option value="7">Kekerasan</option>
-                            <option value="8">Narkoba</option>
-                            <option value="9">Lainnya</option>
-                        </select>
-                    </div>
+                <div class="space-y-4">
+                    <h3 class="text-lg font-bold text-slate-700 flex items-center gap-2 border-b pb-2">
+                        <span class="bg-blue-100 text-blue-600 p-1.5 rounded"><i data-lucide="alert-triangle"
+                                class="w-5 h-5"></i></span>
+                        Detail Kejadian
+                    </h3>
 
-                    <div class="form-group">
-                        <label for="crime_level" class="required">Tingkat Kriminalitas</label>
-                        <div class="level-indicator">
-                            <div class="level-option level-aman" data-level="1">
-                                <div class="level-dot" style="background-color: #00FF00"></div>
-                                <span>Aman</span>
-                            </div>
-                            <div class="level-option level-siaga" data-level="2">
-                                <div class="level-dot" style="background-color: #FFFF00"></div>
-                                <span>Siaga</span>
-                            </div>
-                            <div class="level-option level-rawan" data-level="3">
-                                <div class="level-dot" style="background-color: #FFA500"></div>
-                                <span>Rawan</span>
-                            </div>
-                            <div class="level-option level-bahaya" data-level="4">
-                                <div class="level-dot" style="background-color: #FF0000"></div>
-                                <span>Bahaya</span>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-600 mb-1">Jenis Kejahatan <span
+                                    class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <select id="crime_type" name="crime_type" required
+                                    class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none outline-none transition">
+                                    <option value="">Pilih Jenis...</option>
+                                    <option value="1">Pencurian</option>
+                                    <option value="2">Begal</option>
+                                    <option value="3">Pencopetan</option>
+                                    <option value="4">Penjambretan</option>
+                                    <option value="5">Penipuan</option>
+                                    <option value="6">Pengrusakan</option>
+                                    <option value="7">Kekerasan</option>
+                                    <option value="8">Narkoba</option>
+                                    <option value="9">Lainnya</option>
+                                </select>
+                                <i data-lucide="list" class="w-5 h-5 text-gray-400 absolute left-3 top-3"></i>
                             </div>
                         </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-600 mb-1">Waktu Kejadian <span
+                                    class="text-red-500">*</span></label>
+                            <input type="datetime-local" id="crime_date" name="crime_date" required
+                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition text-gray-600">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-600 mb-2">Tingkat Bahaya <span
+                                class="text-red-500">*</span></label>
                         <input type="hidden" id="crime_level" name="crime_level" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="crime_date" class="required">Tanggal Kejadian</label>
-                        <input type="datetime-local" id="crime_date" name="crime_date" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="description" class="required">Deskripsi Kejadian</label>
-                        <textarea id="description" name="description" placeholder="Jelaskan secara detail kejadian yang dialami..." required></textarea>
-                    </div>
-                </div>
-
-                <!-- Lokasi Kejadian -->
-                <div class="form-section">
-                    <h2>Lokasi Kejadian</h2>
-
-                    <div class="form-group">
-                        <label for="location_name" class="required">Nama Lokasi</label>
-                        <input type="text" id="location_name" name="location_name" placeholder="Contoh: Jl. Malioboro, Depan Mall Ambarukmo, dll" required>
-                    </div>
-
-                    <div class="location-group">
-                        <div class="form-group">
-                            <label for="latitude" class="required">Latitude</label>
-                            <input type="number" id="latitude" name="latitude" step="any" placeholder="-7.795580" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="longitude" class="required">Longitude</label>
-                            <input type="number" id="longitude" name="longitude" step="any" placeholder="110.369490" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <button type="button" class="btn" onclick="getCurrentLocation()">
-                            Gunakan Lokasi Saat Ini
-                        </button>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Peta Lokasi</label>
-                        <div class="map-preview" id="mapPreview">
-                            <div class="map-placeholder">
-                                <i>🗺️</i>
-                                <p>Koordinat akan ditampilkan di sini</p>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div class="level-option cursor-pointer border rounded-lg p-3 flex flex-col items-center gap-2 hover:bg-green-50 hover:border-green-400 transition"
+                                data-level="1">
+                                <span class="w-4 h-4 rounded-full bg-green-500 shadow-sm"></span>
+                                <span class="text-xs font-bold text-gray-600">Aman</span>
+                            </div>
+                            <div class="level-option cursor-pointer border rounded-lg p-3 flex flex-col items-center gap-2 hover:bg-yellow-50 hover:border-yellow-400 transition"
+                                data-level="2">
+                                <span class="w-4 h-4 rounded-full bg-yellow-400 shadow-sm"></span>
+                                <span class="text-xs font-bold text-gray-600">Siaga</span>
+                            </div>
+                            <div class="level-option cursor-pointer border rounded-lg p-3 flex flex-col items-center gap-2 hover:bg-orange-50 hover:border-orange-400 transition"
+                                data-level="3">
+                                <span class="w-4 h-4 rounded-full bg-orange-500 shadow-sm"></span>
+                                <span class="text-xs font-bold text-gray-600">Rawan</span>
+                            </div>
+                            <div class="level-option cursor-pointer border rounded-lg p-3 flex flex-col items-center gap-2 hover:bg-red-50 hover:border-red-400 transition"
+                                data-level="4">
+                                <span class="w-4 h-4 rounded-full bg-red-600 shadow-sm"></span>
+                                <span class="text-xs font-bold text-gray-600">Bahaya</span>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Informasi Pelapor -->
-                <div class="form-section">
-                    <h2>Informasi Pelapor</h2>
-                    
-                    <div class="form-group">
-                        <label for="reporter_name">Nama Pelapor</label>
-                        <input type="text" id="reporter_name" name="reporter_name" placeholder="Nama Anda" disabled>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="reporter_contact">Email</label>
-                        <input type="text" id="reporter_contact" name="reporter_contact" placeholder="Email Anda" disabled>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-600 mb-1">Kronologi Singkat <span
+                                class="text-red-500">*</span></label>
+                        <textarea id="description" name="description" rows="3"
+                            placeholder="Ceritakan detail kejadian..." required
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition text-sm"></textarea>
                     </div>
                 </div>
 
-                <!-- Tombol Submit -->
-                <div class="btn-group">
-                    <button type="button" class="btn btn-reset" onclick="resetForm()">Reset Form</button>
-                    <button type="submit" class="btn btn-submit">Kirim Laporan</button>
+                <div class="space-y-4">
+                    <h3 class="text-lg font-bold text-slate-700 flex items-center gap-2 border-b pb-2">
+                        <span class="bg-blue-100 text-blue-600 p-1.5 rounded"><i data-lucide="map-pin"
+                                class="w-5 h-5"></i></span>
+                        Lokasi Kejadian
+                    </h3>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-600 mb-1">Nama Lokasi <span
+                                class="text-red-500">*</span></label>
+                        <input type="text" id="location_name" name="location_name"
+                            placeholder="Contoh: Depan Indomaret Point" required
+                            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-sm font-bold text-slate-600">Titik Koordinat</span>
+                            <button type="button" onclick="getCurrentLocation()"
+                                class="text-xs flex items-center gap-1 bg-white border border-gray-300 px-3 py-1.5 rounded-md shadow-sm hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition">
+                                <i data-lucide="crosshair" class="w-3 h-3"></i> Ambil Lokasi Saya
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-1">Latitude</label>
+                                <input type="number" id="latitude" name="latitude" step="any" placeholder="-7.xxx"
+                                    required
+                                    class="w-full px-3 py-2 bg-white border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-1">Longitude</label>
+                                <input type="number" id="longitude" name="longitude" step="any" placeholder="110.xxx"
+                                    required
+                                    class="w-full px-3 py-2 bg-white border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 outline-none">
+                            </div>
+                        </div>
+                        <div id="mapPreview"
+                            class="mt-3 h-24 bg-gray-200 rounded border border-gray-300 flex items-center justify-center text-gray-400 text-xs italic">
+                            <span class="flex items-center gap-1"><i data-lucide="map"></i> Peta akan muncul di sini
+                                (Opsional)</span>
+                        </div>
+                    </div>
                 </div>
+
+                <div class="flex gap-4 pt-4">
+                    <button type="button" onclick="resetForm()"
+                        class="flex-1 py-3 border border-gray-300 text-gray-600 font-bold rounded-xl hover:bg-gray-100 transition">Reset</button>
+                    <button type="submit"
+                        class="flex-[2] py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 hover:shadow-blue-500/30 transition transform active:scale-95">Kirim
+                        Laporan</button>
+                </div>
+
             </form>
         </div>
     </div>
 
     <script>
-        // Simulasi data user dari session/database
-        // Dalam implementasi sebenarnya, data ini akan diambil dari PHP session
-        // yang sudah diset saat user login
-        function getUserDataFromSession() {
-            // GANTI BAGIAN INI dengan kode PHP untuk mengambil data dari session
-            // Contoh PHP yang perlu ditambahkan:
-            /*
-            <?php
-            session_start();
-            $userData = [
-                'name' => $_SESSION['user_name'] ?? '',
-                'email' => $_SESSION['user_email'] ?? ''
-            ];
-            echo "const userData = " . json_encode($userData) . ";";
-            ?>
-            */
-            
-            // Untuk demo, menggunakan data dummy
-            return {
-                name: 'John Doe',
-                email: 'john.doe@example.com'
-            };
-        }
+        lucide.createIcons();
 
-        // Auto-fill user information
-        function fillUserInfo() {
-            const userData = getUserDataFromSession();
-            document.getElementById('reporter_name').value = userData.name;
-            document.getElementById('reporter_contact').value = userData.email;
-        }
-
-        // Level kriminalitas selection
-        document.querySelectorAll('.level-option').forEach(option => {
-            option.addEventListener('click', function() {
-                document.querySelectorAll('.level-option').forEach(opt => {
-                    opt.classList.remove('selected');
+        // 1. Logic Level Selection (Visual)
+        const levelOptions = document.querySelectorAll('.level-option');
+        levelOptions.forEach(opt => {
+            opt.addEventListener('click', () => {
+                // Reset visual
+                levelOptions.forEach(o => {
+                    o.classList.remove('ring-2', 'ring-offset-1', 'bg-opacity-20');
+                    if (o.dataset.level == '1') o.classList.remove('bg-green-100', 'ring-green-500');
+                    if (o.dataset.level == '2') o.classList.remove('bg-yellow-100', 'ring-yellow-500');
+                    if (o.dataset.level == '3') o.classList.remove('bg-orange-100', 'ring-orange-500');
+                    if (o.dataset.level == '4') o.classList.remove('bg-red-100', 'ring-red-500');
                 });
-                this.classList.add('selected');
-                document.getElementById('crime_level').value = this.getAttribute('data-level');
+
+                // Set Active
+                const lvl = opt.dataset.level;
+                opt.classList.add('ring-2', 'ring-offset-1');
+                if (lvl == '1') opt.classList.add('bg-green-100', 'ring-green-500');
+                if (lvl == '2') opt.classList.add('bg-yellow-100', 'ring-yellow-500');
+                if (lvl == '3') opt.classList.add('bg-orange-100', 'ring-orange-500');
+                if (lvl == '4') opt.classList.add('bg-red-100', 'ring-red-500');
+
+                // Isi input hidden
+                document.getElementById('crime_level').value = lvl;
             });
         });
 
-        // Update map preview when coordinates change
-        function updateMapPreview() {
-            const lat = document.getElementById('latitude').value;
-            const lng = document.getElementById('longitude').value;
-            const mapPreview = document.getElementById('mapPreview');
-            
-            if (lat && lng) {
-                mapPreview.innerHTML = `
-                    <div class="map-coordinates">
-                        <strong>Lokasi Terpilih:</strong><br>
-                        Latitude: ${lat}<br>
-                        Longitude: ${lng}
-                    </div>
-                `;
-            } else {
-                mapPreview.innerHTML = `
-                    <div class="map-placeholder">
-                        <i>🗺️</i>
-                        <p>Koordinat akan ditampilkan di sini</p>
-                    </div>
-                `;
-            }
-        }
-
-        document.getElementById('latitude').addEventListener('input', updateMapPreview);
-        document.getElementById('longitude').addEventListener('input', updateMapPreview);
-
-        // Get current location
+        // 2. Logic GPS
         function getCurrentLocation() {
             if (navigator.geolocation) {
+                const btn = document.querySelector('button[onclick="getCurrentLocation()"]');
+                const oriText = btn.innerHTML;
+                btn.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Loading...`;
+                lucide.createIcons();
+
                 navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
-                        document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
+                    (pos) => {
+                        document.getElementById('latitude').value = pos.coords.latitude.toFixed(6);
+                        document.getElementById('longitude').value = pos.coords.longitude.toFixed(6);
                         updateMapPreview();
+                        btn.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i> Sukses`;
+                        lucide.createIcons();
+                        setTimeout(() => btn.innerHTML = oriText, 2000);
                     },
-                    function(error) {
-                        alert('Tidak dapat mendapatkan lokasi saat ini. Silakan masukkan manual.');
+                    (err) => {
+                        alert('Gagal mengambil lokasi. Pastikan GPS aktif.');
+                        btn.innerHTML = oriText;
                     }
                 );
             } else {
-                alert('Browser tidak mendukung geolocation. Silakan masukkan manual.');
+                alert('Browser tidak mendukung GPS.');
             }
         }
 
-        // Form validation
-        document.getElementById('crimeReportForm').addEventListener('submit', function(e) {
-            const crimeLevel = document.getElementById('crime_level').value;
-            if (!crimeLevel) {
-                e.preventDefault();
-                alert('Silakan pilih tingkat kriminalitas!');
-                return;
+        // 3. Fake Map Preview Update
+        function updateMapPreview() {
+            const lat = document.getElementById('latitude').value;
+            const lng = document.getElementById('longitude').value;
+            const box = document.getElementById('mapPreview');
+            if (lat && lng) {
+                box.innerHTML = `<span class="text-blue-600 font-bold">📍 ${lat}, ${lng}</span>`;
+                box.classList.add('bg-blue-50', 'border-blue-200');
             }
+        }
 
-            const latitude = parseFloat(document.getElementById('latitude').value);
-            const longitude = parseFloat(document.getElementById('longitude').value);
-            
-            if (latitude < -8.5 || latitude > -7.0 || longitude < 109.0 || longitude > 111.5) {
-                if (!confirm('Koordinat berada di luar area Yogyakarta. Yakin ingin melanjutkan?')) {
-                    e.preventDefault();
-                    return;
-                }
-            }
-
-            // Show success message
-            alert('Laporan berhasil dikirim! Terima kasih telah berkontribusi membuat Yogyakarta lebih aman.');
-        });
-
-        // Reset form
         function resetForm() {
-            if (confirm('Apakah Anda yakin ingin mengosongkan semua form?')) {
+            if (confirm("Hapus semua isian?")) {
                 document.getElementById('crimeReportForm').reset();
-                document.querySelectorAll('.level-option').forEach(opt => {
-                    opt.classList.remove('selected');
-                });
-                updateMapPreview();
-                // Re-fill user info after reset
-                fillUserInfo();
+                levelOptions.forEach(o => o.click()); // Reset trigger style hack
+                document.getElementById('mapPreview').innerHTML = '...';
             }
         }
-
-        // Initialize form
-        window.addEventListener('DOMContentLoaded', function() {
-            fillUserInfo();
-            updateMapPreview();
-            lucide.createIcons();
-            
-            // Sidebar toggle
-            const hamburgerMenu = document.getElementById('hamburger-menu');
-            const sidebar = document.getElementById('sidebar');
-            const sidebarOverlay = document.getElementById('sidebar-overlay');
-
-            hamburgerMenu.addEventListener('click', () => {
-                sidebar.classList.toggle('active');
-                sidebarOverlay.classList.toggle('active');
-            });
-
-            sidebarOverlay.addEventListener('click', () => {
-                sidebar.classList.remove('active');
-                sidebarOverlay.classList.remove('active');
-            });
-        });
     </script>
 </body>
+
 </html>
