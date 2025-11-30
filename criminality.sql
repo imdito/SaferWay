@@ -2,12 +2,12 @@
 -- PostgreSQL database dump
 --
 
-\restrict n1DYIDh0dhHd1oJlzzFbPP3XKJBpNpSFP8h2nbe1igfD3Gc6sQMiovm5dRaXRm3
+\restrict P0sr7iwOsf5PfzChh0P3EZSBHmdWe8CVn2F4aOut05FrczKqAeIu18iNtWJunDp
 
 -- Dumped from database version 18.1
 -- Dumped by pg_dump version 18.1
 
--- Started on 2025-11-29 22:38:51
+-- Started on 2025-11-30 20:46:22
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -22,7 +22,7 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- TOC entry 5953 (class 0 OID 33856)
+-- TOC entry 5964 (class 0 OID 33856)
 -- Dependencies: 226
 -- Data for Name: criminality_levels; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -36,7 +36,7 @@ COPY public.criminality_levels (id, level_name, description, color_code) FROM st
 
 
 --
--- TOC entry 5955 (class 0 OID 33867)
+-- TOC entry 5966 (class 0 OID 33867)
 -- Dependencies: 228
 -- Data for Name: crime_types; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -55,7 +55,7 @@ COPY public.crime_types (id, type_name, description, typical_level_id) FROM stdi
 
 
 --
--- TOC entry 5957 (class 0 OID 33883)
+-- TOC entry 5968 (class 0 OID 33883)
 -- Dependencies: 230
 -- Data for Name: crime_data; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -215,11 +215,69 @@ COPY public.crime_data (id, crime_type_id, level_id, location_name, coordinates,
 152	5	1	Area Titik -7.8279,110.4049	0101000020E6100000A089B0E1E9995B40006F8104C54F1FC0	2025-11-23	Subjek bermain Valorant dengan performa sangat rendah, tidak menimbulkan ancaman publik.	Yogyakarta	2025-11-29 21:58:43.380444
 153	4	3	Area Titik -7.8279,110.4049	0101000020E6100000A089B0E1E9995B40006F8104C54F1FC0	2025-11-23	Kasus penipuan bermodus jual parfum, korban mengalami kerugian materi.	Yogyakarta	2025-11-29 21:59:13.300908
 154	6	2	Area Titik -7.8279,110.4049	0101000020E6100000A089B0E1E9995B40006F8104C54F1FC0	2025-11-23	Pelaku memarahi kurir paket tanpa alasan jelas sehingga mengganggu kenyamanan publik.	Yogyakarta	2025-11-29 21:59:18.377099
+155	1	2	Area Titik -7.7809822,110.4174309	0101000020E6100000C0F51730B79A5B4054083FCCB91F1FC0	2025-02-14	Pembulian terhadap mahasiswa karena hanya membuat PPT.	Yogyakarta	2025-11-30 19:00:46.232191
+156	3	2	Area Titik -7.749278,110.4649105	0101000020E61000004A44F817C19D5B40FC7266BB42FF1EC0	2025-02-14	Pencurian listrik terjadi di area ini.	Yogyakarta	2025-11-30 19:03:28.76101
+157	4	3	Area Titik -7.749278,110.4649105	0101000020E61000004A44F817C19D5B40FC7266BB42FF1EC0	2025-02-14	Penghinaan terhadap pemerintah di titik ini.	Yogyakarta	2025-11-30 19:03:34.130812
+158	3	3	Area Titik -7.779825,110.3866288	0101000020E610000045ECB886BE985B40AD69DE718A1E1FC0	2025-05-12	Tempat kumpul kebo.	Yogyakarta	2025-11-30 19:04:25.268583
+159	4	3	Area Titik -6.4154603,106.8620665	0101000020E61000008A1EF8182CB75A403925C56C6EA919C0	2025-05-13	Gooner tiap hari.	Depok	2025-11-30 19:51:38.021213
+160	3	3	Area Titik -7.7355936,110.4143606	0101000020E61000000F7052E2849A5B406E96DC723FF11EC0	2025-05-14	Penganiayaan karena tidak mengerjakan tugas.	Yogyakarta	2025-11-30 19:53:09.725534
+161	4	4	Area Titik -7.7233932,110.4065098	0101000020E61000003920AE41049A5B405C98E02FC1E41EC0	2025-05-15	Predator anak.	Yogyakarta	2025-11-30 19:55:42.244587
+162	4	4	Area Titik -7.7233932,110.4065098	0101000020E61000003920AE41049A5B405C98E02FC1E41EC0	2025-05-15	Predator anak.	Yogyakarta	2025-11-30 20:00:02.51753
+213	3	2	Jl. Babarsari	0101000020E61000005F07CE19519A5B4070CE88D2DE201FC0	2024-03-12	Perampokan toko elektronik	Yogyakarta	2025-11-30 20:45:22.348162
+214	1	3	Jl. Gejayan	0101000020E6100000E0BE0E9C339A5B40D26F5F07CE191FC0	2025-01-28	Pencurian motor di parkiran mall	Yogyakarta	2025-11-30 20:45:22.348162
+215	5	1	Jl. Kaliurang KM 5	0101000020E6100000B22E6EA301985B40462575029A081FC0	2024-11-02	Penganiayaan antar mahasiswa	Yogyakarta	2025-11-30 20:45:22.348162
+216	4	4	Jl. Magelang	0101000020E6100000BB270F0BB5965B40E0BE0E9C33221FC0	2024-06-18	Pembegalan mobil angkutan uang	Yogyakarta	2025-11-30 20:45:22.348162
+217	2	3	Jl. Solo	0101000020E610000000917EFB3A9C5B40E6AE25E4831E1FC0	2024-12-21	Penipuan online via marketplace	Yogyakarta	2025-11-30 20:45:22.348162
+218	4	1	Pasar Kranggan	0101000020E610000065AA605452975B4067D5E76A2B361FC0	2024-09-14	Pencopetan di pasar tradisional	Yogyakarta	2025-11-30 20:45:22.348162
+219	2	4	Jl. Sudirman	0101000020E6100000780B24287E985B40C3D32B6519221FC0	2025-02-08	Penipuan investasi bodong	Yogyakarta	2025-11-30 20:45:22.348162
+220	5	3	Jl. Tembalang	0101000020E610000030BB270F0B9D5B40F697DD9387051FC0	2024-04-19	Tawuran antar pelajar	Yogyakarta	2025-11-30 20:45:22.348162
+221	1	2	Malioboro	0101000020E61000007AC7293A92975B4097900F7A362B1FC0	2025-03-03	Pencurian dompet turis	Yogyakarta	2025-11-30 20:45:22.348162
+222	3	4	Perumahan Condong Catur	0101000020E6100000B84082E2C7985B4041F163CC5D0B1FC0	2024-02-10	Perampokan rumah kosong	Yogyakarta	2025-11-30 20:45:22.348162
+223	5	3	Kampus UGM	0101000020E6100000B22E6EA301985B40D7A3703D0A171FC0	2025-04-04	Penganiayaan antar organisasi	Yogyakarta	2025-11-30 20:45:22.348162
+224	3	2	Jl. Wates	0101000020E6100000FFB27BF2B0945B40454772F90F291FC0	2024-05-13	Perampokan minimarket	Yogyakarta	2025-11-30 20:45:22.348162
+225	1	1	Pasar Beringharjo	0101000020E610000057EC2FBB27975B408638D6C56D341FC0	2025-02-24	Pencurian handphone	Yogyakarta	2025-11-30 20:45:22.348162
+226	4	4	Jl. Janti	0101000020E610000027A089B0E1995B40B003E78C282D1FC0	2024-03-27	Pembegalan pengendara motor	Yogyakarta	2025-11-30 20:45:22.348162
+227	2	3	Jl. Colombo	0101000020E610000007F0164850985B40F2D24D6210181FC0	2024-07-21	Penipuan rental mobil	Yogyakarta	2025-11-30 20:45:22.348162
+228	5	2	Jl. Monjali	0101000020E61000002B1895D409985B40BF7D1D3867041FC0	2024-08-15	Pemukulan antar sopir angkot	Yogyakarta	2025-11-30 20:45:22.348162
+229	1	4	Terminal Giwangan	0101000020E6100000BC96900F7A965B40287E8CB96B491FC0	2025-01-03	Pencurian barang penumpang bus	Yogyakarta	2025-11-30 20:45:22.348162
+230	3	3	Perumahan Seturan	0101000020E61000008A1F63EE5A9A5B40CB10C7BAB80D1FC0	2024-10-11	Perampokan kos-kosan	Yogyakarta	2025-11-30 20:45:22.348162
+231	4	2	Jl. Affandi	0101000020E6100000228E75711B995B402D211FF46C161FC0	2024-12-05	Pencopetan di halte bus	Yogyakarta	2025-11-30 20:45:22.348162
+232	2	1	Jl. Cik Di Tiro	0101000020E61000005C2041F163985B40C74B378941201FC0	2025-03-18	Penipuan jasa travel	Yogyakarta	2025-11-30 20:45:22.348162
+233	5	4	Jl. Parangtritis	0101000020E6100000C442AD69DE955B4041F163CC5D4B1FC0	2024-06-22	Penganiayaan berat antar geng	Yogyakarta	2025-11-30 20:45:22.348162
+234	1	3	Pasar Ngasem	0101000020E6100000492EFF21FD965B40C9E53FA4DF3E1FC0	2024-11-30	Pencurian tas belanja	Yogyakarta	2025-11-30 20:45:22.348162
+235	3	2	Jl. Gedong Kuning	0101000020E6100000933A014D84995B40C7293A92CB3F1FC0	2025-02-14	Perampokan warung sembako	Yogyakarta	2025-11-30 20:45:22.348162
+236	4	3	Stasiun Tugu	0101000020E610000073D712F241975B402B1895D409281FC0	2024-09-08	Pencopetan penumpang kereta	Yogyakarta	2025-11-30 20:45:22.348162
+237	2	4	Jl. Urip Sumoharjo	0101000020E6100000CB10C7BAB8995B4090A0F831E62E1FC0	2024-04-17	Penipuan investasi emas	Yogyakarta	2025-11-30 20:45:22.348162
+238	5	1	Jl. Sagan	0101000020E6100000B29DEFA7C6975B401A51DA1B7C211FC0	2025-01-25	Pemukulan antar tetangga	Yogyakarta	2025-11-30 20:45:22.348162
+239	1	2	Jl. Tirtodipuran	0101000020E610000061C3D32B65995B40091B9E5E294B1FC0	2024-07-14	Pencurian sepeda motor	Yogyakarta	2025-11-30 20:45:22.348162
+240	3	4	Perumahan Jogja Regency	0101000020E6100000BA490C022B9B5B408638D6C56D341FC0	2024-12-28	Perampokan rumah mewah	Yogyakarta	2025-11-30 20:45:22.348162
+241	4	2	Jl. Bantul	0101000020E61000007E8CB96B09995B404A0C022B87561FC0	2025-03-09	Pencopetan di pasar malam	Yogyakarta	2025-11-30 20:45:22.348162
+242	2	3	Jl. Kusumanegara	0101000020E6100000EA95B20C71985B40F2B0506B9A371FC0	2024-08-21	Penipuan jual beli motor	Yogyakarta	2025-11-30 20:45:22.348162
+243	5	3	Jl. Veteran	0101000020E610000001DE02098A975B4009F9A067B32A1FC0	2024-05-06	Tawuran mahasiswa	Yogyakarta	2025-11-30 20:45:22.348162
+244	1	4	Mall Ambarukmo	0101000020E610000020D26F5F079A5B405227A089B0211FC0	2025-02-11	Pencurian mobil mewah	Yogyakarta	2025-11-30 20:45:22.348162
+245	3	1	Jl. Nologaten	0101000020E6100000423EE8D9AC965B4055C1A8A44E401FC0	2024-10-03	Perampokan warung internet	Yogyakarta	2025-11-30 20:45:22.348162
+246	4	3	Jl. Imogiri Timur	0101000020E610000039D6C56D34985B408BFD65F7E4611FC0	2024-11-19	Pembegalan pengantin baru	Yogyakarta	2025-11-30 20:45:22.348162
+247	2	2	Jl. Laksda Adisucipto	0101000020E610000082734694F69A5B40A7E8482EFF211FC0	2025-04-01	Penipuan tiket pesawat	Yogyakarta	2025-11-30 20:45:22.348162
+248	5	4	Jl. Godean	0101000020E6100000B1506B9A77945B401FF46C567D2E1FC0	2024-07-27	Penganiayaan sopir truk	Yogyakarta	2025-11-30 20:45:22.348162
+249	1	1	Pasar Sentul	0101000020E610000097FF907EFB965B40C442AD69DE311FC0	2024-12-12	Pencurian dompet pedagang	Yogyakarta	2025-11-30 20:45:22.348162
+250	3	3	Jl. Wonosari	0101000020E6100000E5F21FD26F9B5B40091B9E5E294B1FC0	2025-01-17	Perampokan SPBU	Yogyakarta	2025-11-30 20:45:22.348162
+251	4	2	Alun-alun Selatan	0101000020E6100000ECC039234A975B40F0A7C64B37491FC0	2024-09-25	Pencopetan pengunjung malam	Yogyakarta	2025-11-30 20:45:22.348162
+252	2	4	Jl. Prof. Dr. Sardjito	0101000020E6100000F241CF66D5975B40DCD7817346141FC0	2024-06-14	Penipuan proyek fiktif	Yogyakarta	2025-11-30 20:45:22.348162
+253	5	2	Jl. Cemara	0101000020E61000009B559FABAD985B40BF7D1D3867041FC0	2024-08-08	Pemukulan sopir ojek online	Yogyakarta	2025-11-30 20:45:22.348162
+254	1	3	Perumahan Taman Siswa	0101000020E6100000F775E09C11995B404703780B24281FC0	2025-03-22	Pencurian laptop dari rumah	Yogyakarta	2025-11-30 20:45:22.348162
+255	3	4	Jl. Ringroad Utara	0101000020E610000066666666669A5B40EF38454772F91EC0	2024-04-05	Perampokan mobil barang	Yogyakarta	2025-11-30 20:45:22.348162
+256	4	1	Pasar Kembang	0101000020E6100000E5F21FD26F975B401D386744692F1FC0	2024-10-29	Pencopetan pembeli bunga	Yogyakarta	2025-11-30 20:45:22.348162
+257	2	3	Jl. Tamansiswa	0101000020E610000032772D211F985B4021B07268912D1FC0	2025-02-28	Penipuan kursus online	Yogyakarta	2025-11-30 20:45:22.348162
+258	5	4	Jl. Jend. Sudirman	0101000020E6100000DCD7817346985B40BA6B09F9A0271FC0	2024-07-03	Penganiayaan sopir taksi	Yogyakarta	2025-11-30 20:45:22.348162
+259	1	2	Jl. Prawirotaman	0101000020E6100000BE30992A18995B406C787AA52C431FC0	2024-11-11	Pencurian kamar hotel	Yogyakarta	2025-11-30 20:45:22.348162
+260	3	3	Jl. Wates KM 5	0101000020E61000009D11A5BDC1935B40C7293A92CB3F1FC0	2025-01-08	Perampokan bengkel motor	Yogyakarta	2025-11-30 20:45:22.348162
+261	4	2	Jl. Suryotomo	0101000020E6100000CFF753E3A5975B406F8104C58F311FC0	2024-12-25	Pencopetan Natal	Yogyakarta	2025-11-30 20:45:22.348162
+262	2	1	Jl. Dagen	0101000020E6100000D044D8F0F4965B4063EE5A423E281FC0	2025-03-15	Penipuan jasa pengiriman	Yogyakarta	2025-11-30 20:45:22.348162
 \.
 
 
 --
--- TOC entry 5782 (class 0 OID 33092)
+-- TOC entry 5787 (class 0 OID 33092)
 -- Dependencies: 221
 -- Data for Name: spatial_ref_sys; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -229,16 +287,26 @@ COPY public.spatial_ref_sys (srid, auth_name, auth_srid, srtext, proj4text) FROM
 
 
 --
--- TOC entry 5963 (class 0 OID 0)
+-- TOC entry 5970 (class 0 OID 40965)
+-- Dependencies: 233
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.users (id, username, email) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5976 (class 0 OID 0)
 -- Dependencies: 229
 -- Name: crime_data_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.crime_data_id_seq', 154, true);
+SELECT pg_catalog.setval('public.crime_data_id_seq', 262, true);
 
 
 --
--- TOC entry 5964 (class 0 OID 0)
+-- TOC entry 5977 (class 0 OID 0)
 -- Dependencies: 227
 -- Name: crime_types_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -247,7 +315,7 @@ SELECT pg_catalog.setval('public.crime_types_id_seq', 9, true);
 
 
 --
--- TOC entry 5965 (class 0 OID 0)
+-- TOC entry 5978 (class 0 OID 0)
 -- Dependencies: 225
 -- Name: criminality_levels_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -255,11 +323,20 @@ SELECT pg_catalog.setval('public.crime_types_id_seq', 9, true);
 SELECT pg_catalog.setval('public.criminality_levels_id_seq', 4, true);
 
 
--- Completed on 2025-11-29 22:38:51
+--
+-- TOC entry 5979 (class 0 OID 0)
+-- Dependencies: 232
+-- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.users_id_seq', 1, false);
+
+
+-- Completed on 2025-11-30 20:46:22
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict n1DYIDh0dhHd1oJlzzFbPP3XKJBpNpSFP8h2nbe1igfD3Gc6sQMiovm5dRaXRm3
+\unrestrict P0sr7iwOsf5PfzChh0P3EZSBHmdWe8CVn2F4aOut05FrczKqAeIu18iNtWJunDp
 
