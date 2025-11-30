@@ -163,60 +163,142 @@ function setMode(mode) {
     if (startPoint && endPoint) calculateRoute();
 }
 
-function calculateRoute() {
-    if (!startPoint || !endPoint) return alert("Pilih titik dulu!");
-    if (routingControl) map.removeControl(routingControl);
+// Variabel global untuk menyimpan layer rute agar bisa dihapus saat cari ulang
+let currentRouteLayer = null;
 
+async function calculateSafeRoute() {
+    // 1. Validasi Input
+    if (!startPoint || !endPoint) {
+        alert("Harap pilih lokasi asal dan tujuan pada peta terlebih dahulu!");
+        return;
+    }
+
+    // 2. Bersihkan Peta (Hapus rute OSRM lama atau rute GeoJSON lama)
+    if (routingControl) {
+        map.removeControl(routingControl);
+        routingControl = null;
+    }
+    if (currentRouteLayer) {
+        map.removeLayer(currentRouteLayer);
+        currentRouteLayer = null;
+    }
+
+    // Sembunyikan panel info & alert saat loading
     document.getElementById('route-info').classList.add('hidden');
     document.getElementById('safety-alert').classList.add('hidden');
 
-    routingControl = L.Routing.control({
-        waypoints: [L.latLng(startPoint), L.latLng(endPoint)],
-        routeWhileDragging: false, show: false, createMarker: () => null,
-        lineOptions: { styles: [{ color: '#3b82f6', weight: 6, opacity: 0.8 }] }
-    }).addTo(map);
+    // 3. Persiapkan Data untuk API
+    // Handle format LatLng object dari Leaflet
+    const lat1 = startPoint.lat;
+    const lng1 = startPoint.lng;
+    const lat2 = endPoint.lat;
+    const lng2 = endPoint.lng;
 
-    routingControl.on('routesfound', (e) => {
-        const summary = e.routes[0].summary;
+    // Mapping mode: 'safer' -> 'safe' (untuk backend), 'fastest' -> 'fast'
+    const modeBackend = (currentMode === 'safer') ? 'safe' : 'fast';
+
+    // 4. Panggil API PostGIS
+    // Pastikan path ini sesuai dengan struktur folder Anda
+    const url = `../controller/get_route.php?start_lat=${lat1}&start_lng=${lng1}&end_lat=${lat2}&end_lng=${lng2}&mode=${modeBackend}`;
+
+    try {
+        console.log(`Mencari rute ${modeBackend} via PostGIS...`);
+        
+        // Tampilkan loading indicator sederhana (opsional)
+        document.getElementById('info-dist').innerText = "Loading...";
         document.getElementById('route-info').classList.remove('hidden');
-        document.getElementById('info-dist').innerText = (summary.totalDistance / 1000).toFixed(1) + " km";
-        document.getElementById('info-time').innerText = Math.round(summary.totalTime / 60) + " mnt";
 
-        if (currentMode === 'safer') analyzeSafety(e.routes[0].coordinates);
-    });
-}
+        const response = await fetch(url);
+        const data = await response.json();
 
-function analyzeSafety(coords) {
-    const filters = Array.from(document.querySelectorAll('.risk-filter:checked')).map(c => c.value);
-    let hits = 0;
+        // Cek jika API mengembalikan error
+        if (data.error) {
+            throw new Error(data.error);
+        }
 
-    map.eachLayer(l => { if (l.options.className === 'danger-dot') map.removeLayer(l); });
-
-    for (let i = 0; i < coords.length; i += 10) {
-        const pt = L.latLng(coords[i]);
-        for (let c of crimeData) {
-            // Cek setiap laporan di dalam cluster
-            let isDanger = false;
-            for (let r of c.properties.reports) {
-                // Bandingkan Level Laporan (DB) dengan Filter User
-                if (filters.includes(r.level)) { isDanger = true; break; }
+        // 5. Gambar Rute ke Peta
+        currentRouteLayer = L.geoJSON(data, {
+            style: function(feature) {
+                return {
+                    // Hijau untuk Aman, Biru/Abu untuk Cepat
+                    color: modeBackend === 'safe' ? '#10b981' : '#3b82f6', 
+                    weight: 6,
+                    opacity: 0.8,
+                    lineCap: 'round',
+                    lineJoin: 'round'
+                };
             }
+        }).addTo(map);
 
-            if (isDanger) {
-                const loc = L.latLng(c.geometry.coordinates[1], c.geometry.coordinates[0]);
-                if (pt.distanceTo(loc) < 120) {
-                    hits++;
-                    L.circleMarker(pt, { radius: 4, color: '#dc2626', fillOpacity: 1, className: 'danger-dot' }).addTo(map);
+        // Zoom peta agar rute terlihat semua
+        map.fitBounds(currentRouteLayer.getBounds(), { padding: [50, 50] });
+
+        // 6. Hitung Statistik (Jarak & Waktu) Manual
+        // Karena pgRouting mengirim bentuk garis, kita hitung panjangnya pakai Leaflet
+        let totalDistanceMeters = 0;
+        
+        currentRouteLayer.eachLayer(function(layer) {
+            if (layer instanceof L.Polyline) {
+                // Mengambil semua titik koordinat garis
+                const latlngs = layer.getLatLngs();
+                
+                // Ratakan array jika MultiLineString (array bersarang)
+                const flatLatLngs = Array.isArray(latlngs[0]) ? latlngs.flat(Infinity) : latlngs;
+
+                for (let i = 0; i < flatLatLngs.length - 1; i++) {
+                    totalDistanceMeters += flatLatLngs[i].distanceTo(flatLatLngs[i + 1]);
                 }
             }
-        }
-    }
+        });
 
-    if (hits > 0) {
-        document.getElementById('safety-alert').classList.remove('hidden');
-        document.getElementById('conflict-count').innerText = hits;
-        if (routingControl._line) routingControl._line.setStyle({ color: '#ef4444' });
+        // Konversi ke KM & Menit
+        const distanceKm = (totalDistanceMeters / 1000).toFixed(1);
+        const speedKmh = 30; // Asumsi kecepatan rata-rata dalam kota
+        const timeMinutes = Math.round((distanceKm / speedKmh) * 60);
+
+        // 7. Update UI Info Panel
+        document.getElementById('route-info').classList.remove('hidden');
+        document.getElementById('info-dist').innerText = distanceKm + " km";
+        document.getElementById('info-time').innerText = timeMinutes + " mnt";
+
+        // 8. Update Alert Keamanan
+        const alertBox = document.getElementById('safety-alert');
+        const conflictCount = document.getElementById('conflict-count'); // Span angka di HTML
+
+        if (modeBackend === 'safe') {
+            alertBox.classList.remove('hidden');
+            // Kita ubah styling alert jadi hijau karena aman
+            alertBox.className = "mt-3 bg-green-50 border border-green-200 rounded-lg p-3 flex items-start gap-3";
+            alertBox.innerHTML = `
+                <div class="text-green-500 mt-0.5">🛡️</div>
+                <div>
+                    <div class="text-xs font-bold text-green-700 uppercase tracking-wide">Rute Terproteksi</div>
+                    <div class="text-xs text-green-600 mt-0.5">Jalur ini dipilih server karena menghindari titik rawan kriminalitas.</div>
+                </div>
+            `;
+        } else {
+            // Mode Cepat (Fastest) - Peringatan Waspada
+            alertBox.classList.remove('hidden');
+            alertBox.className = "mt-3 bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-3";
+            alertBox.innerHTML = `
+                <div class="text-red-500 mt-0.5">⚠️</div>
+                <div>
+                    <div class="text-xs font-bold text-red-700 uppercase tracking-wide">Mode Tercepat</div>
+                    <div class="text-xs text-red-600 mt-0.5">Waspada! Rute ini mungkin melewati area rawan demi efisiensi waktu.</div>
+                </div>
+            `;
+        }
+
+    } catch (error) {
+        console.error("Routing Error:", error);
+        alert("Gagal menghitung rute: " + error.message);
+        document.getElementById('route-info').classList.add('hidden');
     }
+}
+
+// Override fungsi calculateRoute lama agar memanggil fungsi baru ini
+function calculateRoute() {
+    calculateSafeRoute();
 }
 
 // --- FUNGSI FILTER DATA KEJAHATAN ---
