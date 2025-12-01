@@ -20,6 +20,17 @@ let searchTimeout = null;
 let startMarker = null;
 let endMarker = null;
 
+// Navigation variables
+let navigationActive = false;
+let navigationRoute = null;
+let navigationSteps = [];
+let currentStepIndex = 0;
+let userLocationMarker = null;
+let navigationWatchId = null;
+let lastUserPosition = null;
+let totalRouteDistance = 0; // Store total route distance in meters
+let totalRouteTime = 0; // Store total route time in minutes
+
 // --- LOAD DATA dengan Filter ---
 async function loadCrimeData(filterLevel = 'all') {
     try {
@@ -118,7 +129,11 @@ map.on('locationfound', (e) => {
     map.eachLayer(l => { if (l.options.className === 'gps-marker') map.removeLayer(l); });
     L.circleMarker(e.latlng, { radius: 8, color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 1, className: 'gps-marker' }).addTo(map).bindPopup("Posisi Anda").openPopup();
 
-    if (endPoint) calculateRoute();
+    if (endPoint) {
+        calculateRoute();
+    }
+    // Update navigation button visibility
+    updateNavigationButtonVisibility();
 });
 
 map.on('locationerror', () => { 
@@ -158,6 +173,9 @@ function setStart(latlng) {
         map.removeControl(routingControl); 
         routingControl = null; 
     }
+    
+    // Update navigation button visibility
+    updateNavigationButtonVisibility();
     
     if (endPoint) calculateRoute();
 }
@@ -295,10 +313,17 @@ async function calculateSafeRoute() {
         const speedKmh = 30; // Asumsi kecepatan rata-rata dalam kota
         const timeMinutes = Math.round((distanceKm / speedKmh) * 60);
 
+        // Store globally for navigation
+        totalRouteDistance = totalDistanceMeters;
+        totalRouteTime = timeMinutes;
+
         // 7. Update UI Info Panel
         document.getElementById('route-info').classList.remove('hidden');
         document.getElementById('info-dist').innerText = distanceKm + " km";
         document.getElementById('info-time').innerText = timeMinutes + " mnt";
+        
+        // Always check and update navigation button visibility after route calculation
+        updateNavigationButtonVisibility();
 
         // 8. Update Alert Keamanan
         const alertBox = document.getElementById('safety-alert');
@@ -465,6 +490,9 @@ function selectLocation(result, isStart) {
         
         map.setView(latlng, 16);
         
+        // Update navigation button visibility
+        updateNavigationButtonVisibility();
+        
         // Auto calculate if end point exists
         if (endPoint) calculateRoute();
     } else {
@@ -573,6 +601,381 @@ document.addEventListener('click', (e) => {
         endSuggestions.classList.add('hidden');
     }
 });
+
+// --- NAVIGATION FUNCTIONS ---
+
+function showNavigationButton() {
+    const navButton = document.getElementById('start-navigation-btn');
+    if (navButton) {
+        navButton.classList.remove('hidden');
+        navButton.style.display = 'flex';
+    }
+}
+
+function hideNavigationButton() {
+    const navButton = document.getElementById('start-navigation-btn');
+    if (navButton) {
+        navButton.classList.add('hidden');
+        navButton.style.display = 'none';
+    }
+}
+
+function updateNavigationButtonVisibility() {
+    const startInputValue = document.getElementById('start-input').value;
+    const routeInfoVisible = !document.getElementById('route-info').classList.contains('hidden');
+    
+    // Show navigation button only if route exists AND start point is current location
+    if (routeInfoVisible && startInputValue === '📍 Lokasi Saya') {
+        showNavigationButton();
+    } else {
+        hideNavigationButton();
+    }
+}
+
+function startNavigation() {
+    if (!currentRouteLayer || !startPoint || !endPoint) {
+        alert('Harap cari rute terlebih dahulu sebelum memulai navigasi!');
+        return;
+    }
+    
+    // Check if user is using their current location as start point
+    const startInputValue = document.getElementById('start-input').value;
+    if (startInputValue !== '📍 Lokasi Saya') {
+        alert('Navigasi hanya dapat digunakan jika Anda menggunakan lokasi Anda saat ini sebagai titik awal!\n\nKlik tombol GPS (⊕) untuk menggunakan lokasi Anda.');
+        return;
+    }
+
+    navigationActive = true;
+    
+    // Show navigation modal
+    document.getElementById('navigation-modal').classList.remove('hidden');
+    
+    // Set mode text
+    const modeText = currentMode === 'safer' ? 'Rute Teraman' : 'Rute Tercepat';
+    document.getElementById('nav-mode-text').textContent = `Mode: ${modeText}`;
+    
+    // Initialize with exact route distance and time
+    const distKm = (totalRouteDistance / 1000).toFixed(1);
+    document.getElementById('nav-remaining-distance').textContent = distKm + ' km';
+    document.getElementById('nav-remaining-time').textContent = totalRouteTime + ' menit';
+    document.getElementById('nav-speed').textContent = '0 km/h';
+    
+    // Generate turn-by-turn instructions from route
+    generateNavigationSteps();
+    
+    // Start watching user location
+    startLocationTracking();
+    
+    // Recenter icons
+    lucide.createIcons();
+}
+
+function generateNavigationSteps() {
+    navigationSteps = [];
+    
+    if (!currentRouteLayer) return;
+    
+    // Extract coordinates from route
+    let allCoords = [];
+    currentRouteLayer.eachLayer(layer => {
+        if (layer instanceof L.Polyline) {
+            const coords = layer.getLatLngs();
+            const flatCoords = Array.isArray(coords[0]) ? coords.flat() : coords;
+            allCoords = allCoords.concat(flatCoords);
+        }
+    });
+    
+    if (allCoords.length === 0) return;
+    
+    // Generate simple steps (every 500 meters or significant turn)
+    let step = {
+        position: allCoords[0],
+        instruction: 'Mulai perjalanan',
+        distance: 0,
+        icon: 'play-circle'
+    };
+    navigationSteps.push(step);
+    
+    let cumulativeDistance = 0;
+    
+    for (let i = 1; i < allCoords.length; i++) {
+        const dist = allCoords[i-1].distanceTo(allCoords[i]);
+        cumulativeDistance += dist;
+        
+        // Create step every ~500m or at significant points
+        if (cumulativeDistance >= 500 || i === allCoords.length - 1) {
+            const bearing = calculateBearing(allCoords[i-1], allCoords[i]);
+            const direction = getDirectionFromBearing(bearing);
+            
+            step = {
+                position: allCoords[i],
+                instruction: i === allCoords.length - 1 ? 'Anda telah tiba di tujuan' : `Lanjutkan ke ${direction}`,
+                distance: cumulativeDistance,
+                icon: i === allCoords.length - 1 ? 'flag' : getArrowIcon(direction),
+                bearing: bearing
+            };
+            navigationSteps.push(step);
+            cumulativeDistance = 0;
+        }
+    }
+    
+    currentStepIndex = 0;
+    updateNavigationDisplay();
+}
+
+function calculateBearing(from, to) {
+    const lat1 = from.lat * Math.PI / 180;
+    const lat2 = to.lat * Math.PI / 180;
+    const dLng = (to.lng - from.lng) * Math.PI / 180;
+    
+    const y = Math.sin(dLng) * Math.cos(lat2);
+    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+    const bearing = Math.atan2(y, x) * 180 / Math.PI;
+    
+    return (bearing + 360) % 360;
+}
+
+function getDirectionFromBearing(bearing) {
+    const directions = ['Utara', 'Timur Laut', 'Timur', 'Tenggara', 'Selatan', 'Barat Daya', 'Barat', 'Barat Laut'];
+    const index = Math.round(bearing / 45) % 8;
+    return directions[index];
+}
+
+function getArrowIcon(direction) {
+    const iconMap = {
+        'Utara': 'arrow-up',
+        'Timur Laut': 'arrow-up-right',
+        'Timur': 'arrow-right',
+        'Tenggara': 'arrow-down-right',
+        'Selatan': 'arrow-down',
+        'Barat Daya': 'arrow-down-left',
+        'Barat': 'arrow-left',
+        'Barat Laut': 'arrow-up-left'
+    };
+    return iconMap[direction] || 'arrow-up';
+}
+
+function startLocationTracking() {
+    if (navigator.geolocation) {
+        navigationWatchId = navigator.geolocation.watchPosition(
+            updateUserPosition,
+            handleLocationError,
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+    } else {
+        alert('Geolocation tidak didukung oleh browser Anda');
+    }
+}
+
+function updateUserPosition(position) {
+    const userLat = position.coords.latitude;
+    const userLng = position.coords.longitude;
+    const userPos = L.latLng(userLat, userLng);
+    
+    lastUserPosition = userPos;
+    
+    // Update user marker
+    if (userLocationMarker) {
+        map.removeLayer(userLocationMarker);
+    }
+    
+    userLocationMarker = L.circleMarker(userPos, {
+        radius: 10,
+        color: '#3b82f6',
+        fillColor: '#60a5fa',
+        fillOpacity: 1,
+        weight: 3
+    }).addTo(map);
+    
+    // Add direction arrow
+    const arrow = L.marker(userPos, {
+        icon: L.divIcon({
+            className: 'user-direction-arrow',
+            html: '<div style="width: 30px; height: 30px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2"><path d="M12 2L12 22M12 2L6 8M12 2L18 8"/></svg></div>',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15]
+        })
+    }).addTo(map);
+    
+    // Center map on user
+    map.setView(userPos, 17);
+    
+    // Calculate speed first
+    let speedKmh = 0;
+    if (position.coords.speed && position.coords.speed > 0) {
+        speedKmh = position.coords.speed * 3.6; // m/s to km/h
+    }
+    document.getElementById('nav-speed').textContent = speedKmh.toFixed(1) + ' km/h';
+    
+    // Calculate distance to current step and update
+    if (navigationSteps.length > 0 && navigationSteps[currentStepIndex]) {
+        const stepPos = navigationSteps[currentStepIndex].position;
+        const distToStep = userPos.distanceTo(stepPos);
+        
+        // Update distance to next turn/instruction
+        const distText = distToStep < 1000 ? Math.round(distToStep) + ' m' : (distToStep / 1000).toFixed(1) + ' km';
+        document.getElementById('nav-distance').textContent = distText;
+        
+        // If close to current step, move to next
+        if (distToStep < 50 && currentStepIndex < navigationSteps.length - 1) {
+            currentStepIndex++;
+            updateNavigationDisplay();
+        }
+    }
+    
+    // Update remaining distance and time to destination
+    updateRemainingInfo(userPos, speedKmh);
+}
+
+function updateNavigationDisplay() {
+    if (!navigationSteps[currentStepIndex]) return;
+    
+    const step = navigationSteps[currentStepIndex];
+    
+    // Update instruction
+    document.getElementById('nav-instruction').textContent = step.instruction;
+    
+    // Update distance to next step (will be updated again in updateUserPosition)
+    if (lastUserPosition) {
+        const dist = lastUserPosition.distanceTo(step.position);
+        const distText = dist < 1000 ? Math.round(dist) + ' m' : (dist / 1000).toFixed(1) + ' km';
+        document.getElementById('nav-distance').textContent = distText;
+    } else {
+        document.getElementById('nav-distance').textContent = 'Menghitung...';
+    }
+    
+    // Update arrow icon
+    const arrowIcon = document.getElementById('nav-arrow-icon');
+    arrowIcon.setAttribute('data-lucide', step.icon);
+    lucide.createIcons();
+}
+
+function updateRemainingInfo(userPos, currentSpeed) {
+    if (!navigationSteps.length || !currentRouteLayer) return;
+    
+    // Calculate remaining distance from user to destination
+    let remainingDist = 0;
+    
+    // Distance from user to current step
+    if (navigationSteps[currentStepIndex]) {
+        remainingDist = userPos.distanceTo(navigationSteps[currentStepIndex].position);
+    }
+    
+    // Add distances for all remaining steps
+    for (let i = currentStepIndex + 1; i < navigationSteps.length; i++) {
+        if (navigationSteps[i-1] && navigationSteps[i]) {
+            remainingDist += navigationSteps[i-1].position.distanceTo(navigationSteps[i].position);
+        }
+    }
+    
+    // Update remaining distance display
+    const distKm = (remainingDist / 1000).toFixed(1);
+    document.getElementById('nav-remaining-distance').textContent = distKm + ' km';
+    
+    // Calculate remaining time based on current speed or default
+    let timeMin;
+    if (currentSpeed && currentSpeed > 5) {
+        // Use current speed if available and reasonable (> 5 km/h)
+        timeMin = Math.round((parseFloat(distKm) / currentSpeed) * 60);
+    } else {
+        // Use default speed of 30 km/h for city driving
+        timeMin = Math.round((parseFloat(distKm) / 30) * 60);
+    }
+    
+    // Format time display
+    if (timeMin < 60) {
+        document.getElementById('nav-remaining-time').textContent = timeMin + ' menit';
+    } else {
+        const hours = Math.floor(timeMin / 60);
+        const mins = timeMin % 60;
+        document.getElementById('nav-remaining-time').textContent = hours + ' jam ' + mins + ' menit';
+    }
+    
+    // Check if arrived (within 30 meters)
+    if (remainingDist < 30) {
+        showArrivalNotification();
+    }
+}
+
+function showArrivalNotification() {
+    // Play sound or show notification
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-24 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl z-[4000] animate-fade-in';
+    notification.innerHTML = `
+        <div class="flex items-center gap-3">
+            <i data-lucide="check-circle" class="w-8 h-8"></i>
+            <div>
+                <p class="font-bold text-lg">Anda Telah Tiba!</p>
+                <p class="text-sm">Selamat, perjalanan Anda selesai</p>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(notification);
+    lucide.createIcons();
+    
+    setTimeout(() => {
+        notification.remove();
+        stopNavigation();
+    }, 3000);
+}
+
+function handleLocationError(error) {
+    console.error('Location error:', error);
+    let errorMsg = 'Error mendapatkan lokasi: ';
+    
+    switch(error.code) {
+        case error.PERMISSION_DENIED:
+            errorMsg += 'Izin lokasi ditolak';
+            break;
+        case error.POSITION_UNAVAILABLE:
+            errorMsg += 'Lokasi tidak tersedia';
+            break;
+        case error.TIMEOUT:
+            errorMsg += 'Timeout';
+            break;
+    }
+    
+    console.warn(errorMsg);
+}
+
+function recenterNavigation() {
+    if (lastUserPosition) {
+        map.setView(lastUserPosition, 17);
+    }
+}
+
+function stopNavigation() {
+    navigationActive = false;
+    
+    // Stop watching location
+    if (navigationWatchId !== null) {
+        navigator.geolocation.clearWatch(navigationWatchId);
+        navigationWatchId = null;
+    }
+    
+    // Remove user marker
+    if (userLocationMarker) {
+        map.removeLayer(userLocationMarker);
+        userLocationMarker = null;
+    }
+    
+    // Hide modal
+    document.getElementById('navigation-modal').classList.add('hidden');
+    
+    // Reset map view
+    if (currentRouteLayer) {
+        map.fitBounds(currentRouteLayer.getBounds(), { padding: [50, 50] });
+    }
+    
+    // Reset variables
+    navigationSteps = [];
+    currentStepIndex = 0;
+    lastUserPosition = null;
+}
 
 // Load data pertama kali dengan filter 'all'
 loadCrimeData('all');

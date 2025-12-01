@@ -60,8 +60,12 @@
 
     <div class="flex flex-1 relative overflow-hidden">
 
-        <!-- TOMBOL FILTER KANAN ATAS -->
-        <div class="absolute top-4 right-4 z-[1000]">
+        <!-- TOMBOL FILTER & JAM RAWAN KANAN ATAS -->
+        <div class="absolute top-4 right-4 z-[1000] flex gap-3">
+            <button onclick="showHourlyStats()" class="bg-white rounded-xl shadow-2xl border border-gray-200 px-4 py-3 flex items-center gap-2 hover:bg-purple-50 hover:border-purple-200 transition-all duration-200">
+                <i data-lucide="clock" class="w-5 h-5 text-purple-600"></i>
+                <span class="text-sm font-semibold text-gray-700">Jam Rawan</span>
+            </button>
             <button id="filter-toggle" class="bg-white rounded-xl shadow-2xl border border-gray-200 px-4 py-3 flex items-center gap-2 hover:bg-gray-50 transition-all duration-200">
                 <i data-lucide="filter" class="w-5 h-5 text-gray-700"></i>
                 <span class="text-sm font-semibold text-gray-700">Filter Data</span>
@@ -235,6 +239,10 @@
                         data-lucide="search" class="w-4 h-4"></i> Cari Rute Sekarang</button>
 
                 <div id="route-info" class="hidden mt-4 pt-4 border-t border-gray-100">
+                    <button onclick="startNavigation()" id="start-navigation-btn" style="display: none;"
+                        class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 mb-3">
+                        <i data-lucide="navigation" class="w-4 h-4"></i> Mulai Navigasi
+                    </button>
                     <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200">
                         <div class="text-center">
                             <div class="text-xs text-gray-500">Jarak</div>
@@ -260,6 +268,159 @@
         </div>
 
         <div id="map" class="flex-1 h-full z-0 bg-slate-200"></div>
+    </div>
+
+    <!-- Modal Statistik Jam Rawan -->
+    <div id="hourly-stats-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[3500] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div class="bg-gradient-to-r from-purple-600 to-purple-700 p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold flex items-center gap-2">
+                            <i data-lucide="clock" class="w-7 h-7"></i>
+                            Jam Rawan Kejahatan
+                        </h2>
+                        <p class="text-purple-100 text-sm mt-1">Statistik berdasarkan laporan kejahatan per jam</p>
+                    </div>
+                    <button onclick="closeHourlyStats()" class="hover:bg-purple-600 p-2 rounded-lg transition">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                <!-- Legend -->
+                <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-sm font-bold text-gray-700 mb-3">Tingkat Kerawanan:</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div class="flex items-center gap-2">
+                            <span class="w-4 h-4 rounded-full bg-green-500"></span>
+                            <span class="text-sm font-semibold text-gray-700">Aman</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-4 h-4 rounded-full bg-yellow-500"></span>
+                            <span class="text-sm font-semibold text-gray-700">Siaga</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-4 h-4 rounded-full bg-orange-500"></span>
+                            <span class="text-sm font-semibold text-gray-700">Rawan</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-4 h-4 rounded-full bg-red-500"></span>
+                            <span class="text-sm font-semibold text-gray-700">Bahaya</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="stats-loading" class="text-center py-8">
+                    <i data-lucide="loader-2" class="w-8 h-8 text-purple-600 mx-auto animate-spin"></i>
+                    <p class="text-gray-600 mt-2">Memuat data...</p>
+                </div>
+
+                <!-- Stats Grid -->
+                <div id="stats-container" class="hidden grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+
+                <!-- Error State -->
+                <div id="stats-error" class="hidden text-center py-8">
+                    <i data-lucide="alert-circle" class="w-8 h-8 text-red-600 mx-auto"></i>
+                    <p class="text-gray-600 mt-2">Gagal memuat data statistik</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detail Kejahatan Per Jam -->
+    <div id="hour-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[4000] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
+            <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold flex items-center gap-2">
+                            <i data-lucide="alert-triangle" class="w-7 h-7"></i>
+                            Detail Kejahatan - <span id="detail-hour">00:00</span>
+                        </h2>
+                        <p class="text-indigo-100 text-sm mt-1" id="detail-subtitle">Daftar kejahatan yang terjadi pada jam ini</p>
+                    </div>
+                    <button onclick="closeHourDetail()" class="hover:bg-indigo-600 p-2 rounded-lg transition">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]" id="hour-detail-content">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- NAVIGATION MODAL -->
+    <div id="navigation-modal" class="hidden fixed inset-0 z-[3000] bg-black bg-opacity-70">
+        <div class="flex flex-col h-full">
+            <!-- Top Navigation Bar -->
+            <div class="bg-white shadow-lg p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                            <i data-lucide="navigation" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">Navigasi Aktif</h3>
+                            <p class="text-xs text-gray-500" id="nav-mode-text">Mode: Teraman</p>
+                        </div>
+                    </div>
+                    <button onclick="stopNavigation()" class="p-2 hover:bg-gray-100 rounded-lg transition">
+                        <i data-lucide="x" class="w-6 h-6 text-gray-600"></i>
+                    </button>
+                </div>
+                
+                <!-- Current Instruction -->
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="arrow-up" id="nav-arrow-icon" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-bold text-blue-900" id="nav-instruction">Memuat instruksi...</p>
+                            <p class="text-xs text-blue-600 mt-1" id="nav-distance">0 m</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Info -->
+                <div class="grid grid-cols-3 gap-2 mt-3">
+                    <div class="bg-gray-50 rounded-lg p-2 text-center">
+                        <div class="text-xs text-gray-500">Jarak Tersisa</div>
+                        <div class="text-sm font-bold text-gray-800" id="nav-remaining-distance">-</div>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-2 text-center">
+                        <div class="text-xs text-gray-500">Waktu Tersisa</div>
+                        <div class="text-sm font-bold text-gray-800" id="nav-remaining-time">-</div>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-2 text-center">
+                        <div class="text-xs text-gray-500">Kecepatan</div>
+                        <div class="text-sm font-bold text-gray-800" id="nav-speed">0 km/h</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map View (Centered on User) -->
+            <div id="navigation-map" class="flex-1 relative">
+                <!-- Map will be recentered here -->
+            </div>
+
+            <!-- Bottom Controls -->
+            <div class="bg-white shadow-lg p-4 flex gap-3">
+                <button onclick="recenterNavigation()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2">
+                    <i data-lucide="crosshair" class="w-5 h-5"></i> Pusatkan Lokasi
+                </button>
+                <button onclick="stopNavigation()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2">
+                    <i data-lucide="square" class="w-5 h-5"></i> Berhenti
+                </button>
+            </div>
+        </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -418,6 +579,312 @@
         filterModal.addEventListener('click', (e) => {
             if (e.target === filterModal) {
                 closeModal();
+            }
+        });
+
+        // ========== HOURLY STATS FUNCTIONS ==========
+        function showHourlyStats() {
+            const modal = document.getElementById('hourly-stats-modal');
+            const loading = document.getElementById('stats-loading');
+            const container = document.getElementById('stats-container');
+            const error = document.getElementById('stats-error');
+            
+            // Show modal
+            modal.classList.remove('hidden');
+            
+            // Reset states
+            loading.classList.remove('hidden');
+            container.classList.add('hidden');
+            error.classList.add('hidden');
+            
+            // Fetch data
+            fetch('../controller/hourly_stats.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayHourlyStats(data.data);
+                        loading.classList.add('hidden');
+                        container.classList.remove('hidden');
+                    } else {
+                        throw new Error(data.error || 'Unknown error');
+                    }
+                })
+                .catch(err => {
+                    console.error('Error fetching hourly stats:', err);
+                    loading.classList.add('hidden');
+                    error.classList.remove('hidden');
+                })
+                .finally(() => {
+                    lucide.createIcons();
+                });
+        }
+
+        function closeHourlyStats() {
+            document.getElementById('hourly-stats-modal').classList.add('hidden');
+        }
+
+        // Store hourly stats globally for detail view
+        let hourlyStatsData = [];
+
+        function displayHourlyStats(stats) {
+            const container = document.getElementById('stats-container');
+            container.innerHTML = '';
+            hourlyStatsData = stats; // Store for later use
+            
+            console.log('Total hours with data:', stats.length);
+            console.log('Sample stat:', stats[0]);
+            
+            stats.forEach(stat => {
+                const hour = stat.hour;
+                const hourStr = hour.toString().padStart(2, '0') + ':00';
+                const total = stat.total;
+                const level = stat.display_level;
+                const color = stat.color;
+                
+                let bgColor, borderColor, textColor;
+                if (stat.dominant_level === 4) {
+                    bgColor = 'bg-red-50';
+                    borderColor = 'border-red-500';
+                    textColor = 'text-red-700';
+                } else if (stat.dominant_level === 3) {
+                    bgColor = 'bg-orange-50';
+                    borderColor = 'border-orange-500';
+                    textColor = 'text-orange-700';
+                } else if (stat.dominant_level === 2) {
+                    bgColor = 'bg-yellow-50';
+                    borderColor = 'border-yellow-500';
+                    textColor = 'text-yellow-700';
+                } else {
+                    bgColor = 'bg-green-50';
+                    borderColor = 'border-green-500';
+                    textColor = 'text-green-700';
+                }
+                
+                const card = document.createElement('div');
+                card.className = `${bgColor} border-2 ${borderColor} rounded-lg p-4 transition hover:shadow-xl hover:scale-105 cursor-pointer transform`;
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-2xl font-bold text-gray-800">${hourStr}</span>
+                        <span class="w-3 h-3 rounded-full" style="background-color: ${color}"></span>
+                    </div>
+                    <div class="text-sm font-bold ${textColor} mb-1">${level}</div>
+                    <div class="text-xs text-gray-600 flex items-center gap-1">
+                        <i data-lucide="file-text" class="w-3 h-3"></i>
+                        ${total} laporan
+                    </div>
+                    <div class="mt-2 pt-2 border-t border-gray-200">
+                        <div class="grid grid-cols-2 gap-1 text-xs">
+                            <div class="flex items-center gap-1">
+                                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                                <span class="text-gray-600">${stat.level_1}</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="w-2 h-2 rounded-full bg-yellow-500"></span>
+                                <span class="text-gray-600">${stat.level_2}</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+                                <span class="text-gray-600">${stat.level_3}</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                                <span class="text-gray-600">${stat.level_4}</span>
+                            </div>
+                        </div>
+                    </div>
+                    ${(stat.crimes && stat.crimes.length > 0) ? '<div class="mt-2 text-center"><span class="text-xs text-gray-500 italic">Klik untuk detail</span></div>' : ''}
+                `;
+                
+                // Add click event to show details only if there are crimes
+                const hasCrimes = stat.crimes && stat.crimes.length > 0;
+                console.log(`Hour ${hour}: total=${total}, crimes=${stat.crimes ? stat.crimes.length : 0}, hasCrimes=${hasCrimes}`);
+                
+                if (hasCrimes) {
+                    card.addEventListener('click', () => {
+                        console.log('Clicked hour:', hour);
+                        showHourDetail(hour);
+                    });
+                } else {
+                    card.style.cursor = 'default';
+                    card.classList.remove('hover:scale-105', 'hover:shadow-xl');
+                }
+                
+                container.appendChild(card);
+            });
+            
+            // Re-create icons after adding cards
+            lucide.createIcons();
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('hourly-stats-modal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeHourlyStats();
+            }
+        });
+
+        // ========== HOUR DETAIL FUNCTIONS ==========
+        function showHourDetail(hour) {
+            console.log('showHourDetail called with hour:', hour);
+            console.log('hourlyStatsData:', hourlyStatsData);
+            
+            const stat = hourlyStatsData.find(s => s.hour === hour);
+            console.log('Found stat:', stat);
+            
+            if (!stat) {
+                console.error('No stat found for hour:', hour);
+                return;
+            }
+            
+            const modal = document.getElementById('hour-detail-modal');
+            const hourStr = hour.toString().padStart(2, '0') + ':00';
+            const crimes = stat.crimes || [];
+            
+            console.log('Crimes for hour', hour, ':', crimes.length);
+            
+            // Update modal title
+            document.getElementById('detail-hour').textContent = hourStr;
+            document.getElementById('detail-subtitle').textContent = 
+                `${crimes.length} kejahatan tercatat pada jam ini`;
+            
+            // Build content
+            const content = document.getElementById('hour-detail-content');
+            
+            if (crimes.length === 0) {
+                content.innerHTML = `
+                    <div class="text-center py-12">
+                        <i data-lucide="check-circle" class="w-16 h-16 text-green-500 mx-auto mb-4"></i>
+                        <h3 class="text-lg font-bold text-gray-800">Tidak Ada Laporan</h3>
+                        <p class="text-gray-600 text-sm mt-2">Belum ada kejahatan yang dilaporkan pada jam ini</p>
+                    </div>
+                `;
+                lucide.createIcons();
+            } else {
+                let html = '<div class="space-y-4">';
+                
+                crimes.forEach((crime, index) => {
+                    // Escape HTML in strings
+                    const escapedLocation = String(crime.location_name).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    const escapedDesc = String(crime.description).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    // Tentukan warna berdasarkan level
+                    let levelColor, levelBg, levelBorder;
+                    if (crime.level_id === 4) {
+                        levelColor = 'text-red-700';
+                        levelBg = 'bg-red-50';
+                        levelBorder = 'border-red-200';
+                    } else if (crime.level_id === 3) {
+                        levelColor = 'text-orange-700';
+                        levelBg = 'bg-orange-50';
+                        levelBorder = 'border-orange-200';
+                    } else if (crime.level_id === 2) {
+                        levelColor = 'text-yellow-700';
+                        levelBg = 'bg-yellow-50';
+                        levelBorder = 'border-yellow-200';
+                    } else {
+                        levelColor = 'text-green-700';
+                        levelBg = 'bg-green-50';
+                        levelBorder = 'border-green-200';
+                    }
+                    
+                    html += `
+                        <div class="${levelBg} border ${levelBorder} rounded-xl p-4 hover:shadow-md transition">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="px-2 py-1 ${levelBg} ${levelColor} text-xs font-bold rounded-full border ${levelBorder}">
+                                            ${crime.level_name}
+                                        </span>
+                                        <span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">
+                                            ${crime.crime_type}
+                                        </span>
+                                    </div>
+                                    <h4 class="font-bold text-gray-800 flex items-center gap-2">
+                                        <i data-lucide="map-pin" class="w-4 h-4 text-gray-600"></i>
+                                        ${crime.location_name}
+                                    </h4>
+                                    <p class="text-xs text-gray-600 mt-1 flex items-center gap-1">
+                                        <i data-lucide="map" class="w-3 h-3"></i>
+                                        ${crime.area || 'N/A'}
+                                    </p>
+                                </div>
+                                <button onclick="showCrimeOnMap(${crime.latitude}, ${crime.longitude}, '${escapedLocation}')" 
+                                        class="ml-3 p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition flex-shrink-0"
+                                        title="Lihat di Peta">
+                                    <i data-lucide="navigation" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="bg-white rounded-lg p-3 mb-3">
+                                <p class="text-sm text-gray-700 leading-relaxed">${escapedDesc}</p>
+                            </div>
+                            
+                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                <span class="flex items-center gap-1">
+                                    <i data-lucide="calendar" class="w-3 h-3"></i>
+                                    ${crime.crime_date}
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <i data-lucide="map-pin" class="w-3 h-3"></i>
+                                    ${Number(crime.latitude).toFixed(6)}, ${Number(crime.longitude).toFixed(6)}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                content.innerHTML = html;
+                
+                // Create icons after HTML is inserted
+                setTimeout(() => {
+                    lucide.createIcons();
+                }, 10);
+            }
+            
+            // Show modal
+            modal.classList.remove('hidden');
+        }
+
+        function closeHourDetail() {
+            document.getElementById('hour-detail-modal').classList.add('hidden');
+        }
+
+        function showCrimeOnMap(lat, lng, locationName) {
+            // Close both modals
+            closeHourDetail();
+            closeHourlyStats();
+            
+            // Pan map to location
+            if (typeof map !== 'undefined') {
+                map.setView([lat, lng], 16);
+                
+                // Add temporary marker
+                const marker = L.marker([lat, lng], {
+                    icon: L.divIcon({
+                        className: 'custom-marker',
+                        html: '<div style="background: #ef4444; width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>',
+                        iconSize: [30, 30]
+                    })
+                }).addTo(map);
+                
+                marker.bindPopup(`
+                    <div class="text-center">
+                        <strong class="text-red-600">⚠️ Lokasi Kejahatan</strong><br>
+                        <span class="text-sm">${locationName}</span>
+                    </div>
+                `).openPopup();
+                
+                // Remove marker after 5 seconds
+                setTimeout(() => {
+                    map.removeLayer(marker);
+                }, 5000);
+            }
+        }
+
+        // Close detail modal when clicking outside
+        document.getElementById('hour-detail-modal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeHourDetail();
             }
         });
     </script>

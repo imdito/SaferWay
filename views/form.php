@@ -156,6 +156,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </header>
 
+    <!-- Modal Statistik Jam Rawan -->
+    <div id="hourly-stats-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div class="bg-gradient-to-r from-purple-600 to-purple-700 p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold flex items-center gap-2">
+                            <i data-lucide="clock" class="w-7 h-7"></i>
+                            Jam Rawan Kejahatan
+                        </h2>
+                        <p class="text-purple-100 text-sm mt-1">Statistik berdasarkan laporan kejahatan per jam</p>
+                    </div>
+                    <button onclick="closeHourlyStats()" class="hover:bg-purple-600 p-2 rounded-lg transition">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                <!-- Legend -->
+                <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-sm font-bold text-gray-700 mb-3">Tingkat Kerawanan:</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div class="flex items-center gap-2">
+                            <span class="w-4 h-4 rounded-full bg-green-500"></span>
+                            <span class="text-sm font-semibold text-gray-700">Aman</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-4 h-4 rounded-full bg-yellow-500"></span>
+                            <span class="text-sm font-semibold text-gray-700">Siaga</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-4 h-4 rounded-full bg-orange-500"></span>
+                            <span class="text-sm font-semibold text-gray-700">Rawan</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-4 h-4 rounded-full bg-red-500"></span>
+                            <span class="text-sm font-semibold text-gray-700">Bahaya</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="stats-loading" class="text-center py-8">
+                    <i data-lucide="loader-2" class="w-8 h-8 text-purple-600 mx-auto animate-spin"></i>
+                    <p class="text-gray-600 mt-2">Memuat data...</p>
+                </div>
+
+                <!-- Stats Grid -->
+                <div id="stats-container" class="hidden grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+
+                <!-- Error State -->
+                <div id="stats-error" class="hidden text-center py-8">
+                    <i data-lucide="alert-circle" class="w-8 h-8 text-red-600 mx-auto"></i>
+                    <p class="text-gray-600 mt-2">Gagal memuat data statistik</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container mx-auto px-4 py-8 max-w-3xl">
 
         <?php if ($success_message): ?>
@@ -474,6 +536,124 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Inisialisasi peta saat halaman dimuat
         document.addEventListener('DOMContentLoaded', function() {
             initMap();
+        });
+
+        // Fungsi untuk menampilkan modal statistik jam rawan
+        function showHourlyStats() {
+            const modal = document.getElementById('hourly-stats-modal');
+            const loading = document.getElementById('stats-loading');
+            const container = document.getElementById('stats-container');
+            const error = document.getElementById('stats-error');
+            
+            // Show modal
+            modal.classList.remove('hidden');
+            
+            // Reset states
+            loading.classList.remove('hidden');
+            container.classList.add('hidden');
+            error.classList.add('hidden');
+            
+            // Fetch data
+            fetch('../controller/hourly_stats.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayHourlyStats(data.data);
+                        loading.classList.add('hidden');
+                        container.classList.remove('hidden');
+                    } else {
+                        throw new Error(data.error || 'Unknown error');
+                    }
+                })
+                .catch(err => {
+                    console.error('Error fetching hourly stats:', err);
+                    loading.classList.add('hidden');
+                    error.classList.remove('hidden');
+                })
+                .finally(() => {
+                    lucide.createIcons();
+                });
+        }
+
+        // Fungsi untuk menutup modal
+        function closeHourlyStats() {
+            document.getElementById('hourly-stats-modal').classList.add('hidden');
+        }
+
+        // Fungsi untuk menampilkan data statistik
+        function displayHourlyStats(stats) {
+            const container = document.getElementById('stats-container');
+            container.innerHTML = '';
+            
+            stats.forEach(stat => {
+                const hour = stat.hour;
+                const hourStr = hour.toString().padStart(2, '0') + ':00';
+                const total = stat.total;
+                const level = stat.display_level;
+                const color = stat.color;
+                
+                // Tentukan warna background berdasarkan level
+                let bgColor, borderColor, textColor;
+                if (stat.dominant_level === 4) {
+                    bgColor = 'bg-red-50';
+                    borderColor = 'border-red-500';
+                    textColor = 'text-red-700';
+                } else if (stat.dominant_level === 3) {
+                    bgColor = 'bg-orange-50';
+                    borderColor = 'border-orange-500';
+                    textColor = 'text-orange-700';
+                } else if (stat.dominant_level === 2) {
+                    bgColor = 'bg-yellow-50';
+                    borderColor = 'border-yellow-500';
+                    textColor = 'text-yellow-700';
+                } else {
+                    bgColor = 'bg-green-50';
+                    borderColor = 'border-green-500';
+                    textColor = 'text-green-700';
+                }
+                
+                const card = document.createElement('div');
+                card.className = `${bgColor} border-2 ${borderColor} rounded-lg p-4 transition hover:shadow-lg cursor-pointer`;
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-2xl font-bold text-gray-800">${hourStr}</span>
+                        <span class="w-3 h-3 rounded-full" style="background-color: ${color}"></span>
+                    </div>
+                    <div class="text-sm font-bold ${textColor} mb-1">${level}</div>
+                    <div class="text-xs text-gray-600">
+                        ${total} laporan
+                    </div>
+                    <div class="mt-2 pt-2 border-t border-gray-200">
+                        <div class="grid grid-cols-2 gap-1 text-xs">
+                            <div class="flex items-center gap-1">
+                                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                                <span class="text-gray-600">${stat.level_1}</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="w-2 h-2 rounded-full bg-yellow-500"></span>
+                                <span class="text-gray-600">${stat.level_2}</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+                                <span class="text-gray-600">${stat.level_3}</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                                <span class="text-gray-600">${stat.level_4}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('hourly-stats-modal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeHourlyStats();
+            }
         });
     </script>
 </body>
